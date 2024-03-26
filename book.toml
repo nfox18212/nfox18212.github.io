@@ -1,0 +1,6 @@
+[book]
+authors = ["nfox18212"]
+language = "en"
+multilingual = false
+src = "src"
+title = "CSE379 Lab 7 Documentation"
