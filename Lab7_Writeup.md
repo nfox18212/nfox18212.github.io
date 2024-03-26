@@ -14,6 +14,7 @@
 - [Section 4: Movement](#section-4-movement)
 - [Section 5: Pausing](#section-5-pausing)
 - [Section 6: mdBook Documentation and GitHub pages](#section-6-mdbook-documentation-and-github-pages)
+- [Section 7: Project Layout](#section-7-project-layout)
 
 # Section 0: Introduction
 
@@ -111,12 +112,23 @@ Once a seed value has been acquired, we will preform a series of modulous operat
 
 # Section 3: Board Layout and Rotation
 
-The board will be laid out in memory using 7 matrices, and an adjacency list. 6 of these matrices represent the 6 faces of the cube.  The final matrix is the display matrix.  A table will represent the imposed rotation when the character moves between faces, if any.  The current character's rotation will be stored as an integer value 0-3, representing a rotation of 90 degrees times the integer value.
+The board will be laid out in memory using 7 matrices, and an adjacency list. 6 of these matrices represent the 6 faces of the cube.  The final matrix is the display matrix.  A table will represent the imposed rotation when the character moves between faces, if any.  The current character's orientation will be stored as an integer value 0-3, representing a rotation of 90 degrees times the integer value.
 
-Each cell in the matrix will contain the color of that cell.  When we go to display one of the faces, we will copy the matrix we are displaying into the display matrix, and 
+Each cell in the matrix will contain the color of that cell.  When we go to display one of the faces, we will copy the matrix we are displaying into the display matrix, and we will preform a composition of reflections and transposition based on the character's orientation.  
 
 # Section 4: Movement
 
+The character will move at a rate of two cells per second.  When onto a different face of the cube, the display matrix will pull the adjacent two columns from the new face and display them.  Then, after two game ticks which are half a second have occured, the new face will be fully rendered.
+
+The orientation of the face will be based on the character's orientation, and only the display face's orientation will change.
+
 # Section 5: Pausing
 
+When `sw1` has been hit, the game will go into a blocking loop inside the interrupt after disabling all other interrupts, including the timer.  This will be done using an `eor` instruction and a `beq` instruction.  The board will be replaced with a string that simply says "GAME PAUSED" and this will stay for the duration of the pause.
+
 # Section 6: mdBook Documentation and GitHub pages
+All documentation will be hosted on GitHub pages, publically.  The docs will be written in Markdown and built in mdBook.
+
+# Section 7: Project Layout
+
+The project will be split into multiple files, which each file serving a separate purpose.  This is to make it so that the code is easy to read and parse without scrolling through chunks of irrelevant information.
