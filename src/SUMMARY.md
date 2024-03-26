@@ -1,7 +1,7 @@
 # Summary
 
 # Introduction
-[Introduction](./readme.md)
+[Introduction](./intro.md)
 
 # Code Base
 - [Data Structures](data/datastructures.md)
