@@ -82,6 +82,14 @@ ptr_to_restart			.word restartprompt
 	.global uart_interrupt_init
 	.global gpio_interrupt_init
 
+sw1mask:	.equ	0xEF	; bitmask to mask out for SW1, pin 4
+sw1write:	.equ 	0x10	; bitmasks to write a 1 for SW1, pin 4
+uartwrite:	.equ	0x20
+clear:		.equ	0xC		; form feed, new page
+newline:	.equ	0xA
+return:		.equ	0xD		; carriage return
+star:		.equ	0x2A	; * - the asterisk
+
 
 
 init:
@@ -274,8 +282,8 @@ output_character:
 							; that are used in your routine.  include lr if this
 							; routine calls another routine.
 
-	;mov  r2, #0xc000		; this code left intentionally commented to remind me of wtf i'm doing in r2
-	;movt r2, #0x4000
+	mov  	r2, #0xc000		; this code left intentionally commented to remind me of wtf i'm doing in r2
+	movt 	r2, #0x4000
 	mov		r4, #0x20
 							; looking for RxFF flag, offset 5 bits from #0x4000C018
 tloop:						; Transmit loop
@@ -497,6 +505,88 @@ rloop:						; Recieve loop
 	beq		rloop			; if flag reg contains 1, loop
 							; now there should be data to read
 	ldrb 	r0, [r2, #0]	; no offset needed, just load data reg into r0 and return from program
+
+	pop {r4-r12,lr}   		; restore registers all registers preserved in the
+							; push at the top of this routine from the stack.
+	mov pc, lr
+
+
+
+int2string:
+	push {r4-r12,lr} 		; store any registers in the range of r4 through r12
+							; that are used in your routine.  include lr if this
+							; routine calls another routine.
+
+							; your code for your int2string routine is placed here
+	mov		r5, r0			; preserve the address in r0
+	mov		r0, r1			; copy the number we're given into r0
+	and		r8, r8, #0		; clear r8, use this to contain the string - WE CAN CONTAIN THE WHOLE STRING IN ONE REG!
+	; now we need to determine the number of digits, we can do it by comparing to 99 and 9
+	cmp		r1, #99			; if its greater than 99, then it has to be 3 digits in size
+	itt		gt				; if-then-then block based on it being greater than 99
+	movgt	r4, #3
+	bgt		skip			; skip the rest of the checks
+
+	cmp		r1, #9			; if its greater than 9, it must be 2 digits.  if its not, then it must be one digit
+	ite	gt
+	movgt	r1, #2
+	movle	r1, #1
+
+skip:
+
+	ldr		r7, ptr_to_negFlag; we need to know if we have a negative number
+	ldrb	r6, [r7, #0]
+	cmp		r6, #1			; so if it is, then add 0x2D into r8 and shift it
+	itt		eq
+	addeq	r8, r8, #0x2D	; 0x2D is hex for -
+	lsleq	r8, #8			; shift it by one byte, the smallest byte should be zero
+
+	cmp		r4, #3			; check to see if we have three digits
+	beq		three_digits	; if so, handle everything in three_digits.  repeat for 2 and 1
+
+	cmp		r4, #2
+	beq		two_digits
+
+	cmp		r4, #1
+	beq		one_digit
+
+
+three_digits:
+
+	mov		r1, #100		; copy 100 into r1 to do a div_and_mod with 100, root out the 100ths place
+	bl		div_and_mod
+	add		r0, r0, #0x30	; convert int to char
+	add		r8, r8, r0		; we want quotient because that'll tell us the 100ths place
+							; r8 is where we're keeping track of the string, adding 0x30 turns it into ascii
+	lsl		r8, #8			; shift it by a byte, to keep the last two bytes 00
+	mov		r0, r1			; then just copy the remainder into r0
+							; now we just do it for two digits
+
+two_digits:
+
+	mov		r1, #10			; copy in 10 to r1
+	bl		div_and_mod
+	add		r0, r0, #0x30
+	add		r8, r8, r0		; same as earlier
+	lsl		r8, #8
+	mov		r0, r1
+
+one_digit:
+
+	; unlike the other two times, if we only have 1 digit then we just add it to r8
+	add		r0, r0, #0x30
+	add		r8, r8, r0
+	; no need for shifting
+
+	; now at this point, given 435 with negative flag, r8 would look like: 0x2D343335 or "534-" because endianness.
+	; rotate by 1 byte 3 times to fix
+	ror		r8, r8, #8
+	ror		r8, r8, #8
+	ror		r8, r8, #8		; no, rotating once by 24 bits is NOT the same thing
+
+	; now we can just store it
+	str		r8, [r5, #0] 	; address will still be in r5
+
 
 	pop {r4-r12,lr}   		; restore registers all registers preserved in the
 							; push at the top of this routine from the stack.
