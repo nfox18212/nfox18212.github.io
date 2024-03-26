@@ -1,6 +1,7 @@
 # c files
 .o
 .out
+Debug
 
 # dotfiles
 !.*
