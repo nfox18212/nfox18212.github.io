@@ -1,0 +1,14 @@
+[book]
+title="CSE379 Lab 7 Documentation"
+authors=["Nathan Fox","Sebastien Bowen"]
+description="Documentation book for implementing Atari Video Cube in ARM Assembly"
+language="en"
+
+[build]
+build-dir="book"
+create-missing=true
+use-default-preprocessors=true
+
+[output.html]
+default-theme="dark"
+mathjax-support="true"
