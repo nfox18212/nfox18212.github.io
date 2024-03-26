@@ -26,7 +26,18 @@ def rotate(mat, axis, angle):
         print("invalid axis dummy")
 
     return mat @ rot
-        
+
+def rowReflection(mat):
+    shape = np.shape(mat)
+    numRows = shape[0] - 1
+    numCols = shape[1] - 1
+    newMat = np.zeros([3,3])
+
+    for row in range(3):
+        for col in range(3):
+            newMat[row,col] = mat[numRows - row,col]
+    return newMat
+
 
 mat = np.array([
     [1,2,3],
@@ -35,8 +46,9 @@ mat = np.array([
     ])
 
 pi = np.pi
-print(mat)
-print(rotate(mat, 'z', pi/2))
+#print(mat)
+print(rowReflection(mat))
+#print(rotate(mat, 'z', pi/2))
 #print(rotate(mat, 'y', pi/2))
 
 
