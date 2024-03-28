@@ -1,20 +1,22 @@
 # Summary
 
-# Introduction
-[Introduction](./README.md)
+# Introduction Temp
+[Temp Intro](./start.md)
 
 # Code Base
 - [Data Structures](data/datastructures.md)
   - [Matrices](data/matrix.md)
-  - [Adjacency List](data/list.md)
+  - [Adjacency List](data/alist.md)
+  - [Tables](data/tables.md)
+  - [Linear Algebra](data/alg.md)
 - [Random Numbers](rng/rng.md)
   - [Timers](rng/timers.md)
   - [Seed](rng/seed.md)
   - [Board Filling](rng/fillboard.md)
 - [Board](board/board.md)
   -  [Layout in Memory](board/layout.md)
-  -  [Rotation](board/rot.md)
-  -  [Linear Algebra](data/alg.md)
+  -  [Rotation and Player Orientation](board/rot.md)
+  -  [Player Movement](board/movement.md)
 - [Pausing](pause/pause.md)
 - [Project Layout](layout/layout.md)
 

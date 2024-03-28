@@ -94,7 +94,8 @@ mydata:			.byte		0x20	; This is where you can store data.
 	.global read_string				; This is from your Lab #4 Library
 	.global output_string			; This is from your Lab #4 Library
 	.global uart_init				; This is from your Lab #4 Library
-	.global lab6
+	.global lab7
+	.global	init_datastructures
 
 ptr_to_prompt:		.word prompt
 ptr_to_mydata:		.word mydata
@@ -121,134 +122,22 @@ newline:	.equ	0xA
 return:		.equ	0xD		; carriage return
 star:		.equ	0x2A	; * - the asterisk
 
-lab6:							; This is your main routine which is called from
+lab7:							; This is your main routine which is called from
 ; your C wrapper.
 	push 	{r4-r12,lr}   		; Preserve registers to adhere to the AAPCS
 	bl 		init
+	bl		init_datastructures
 
 	clc		; clear screen
-	; init score
-	ldr 	r4, score_ptr
-	and		r5, r5, #0			; make sure score starts at 0
-	strh	r5, [r4, #0]
 
-	; initialize xpos to 10
-	ldr 	r6, xpos_ptr
-	mov		r7, #10
-	strb	r7, [r6, #0]
-
-	; initalize ypos to 10
-	ldr		r8, ypos_ptr
-	mov		r9, #10
-	strb	r9, [r8, #0]
-
-
-
-	; ypos = r9 = 10, xpos = r7 = 10
-	calculate_offset	r7, r9, r10 ; calculates the offset and stores it in r10
-
-
-	ldr		r0, board_ptr
-	mov		r12, #star		; star == *
-	strb	r12, [r0, r10]	; r10 contains the offset we just calculated, so we use that
-
-	bl		output_string  	; print initial board
-
-
-main_loop:
-	ldr		r4, pause_ptr
-	ldrb	r5, [r4, #0]	; are we paused?
 	
-	cmp		r4, #1			; if its 1, we are paused
-	beq		main_loop		; blocking busy-waiting loop
-	
-tick_loop:	
-	ldr		r4, tick_ptr	; grab tick ptr
-	ldrb	r5, [r4, #0]	; are waiting on a tick?
-	
-	cmp		r4, #0			
-	beq		tick_loop		; if we are waiting for a tick, it'll be a 0
-							; tick happened, continue execution
-	mov		r5, #0			; reset the flag
-	strb	r5, [r4, #0]							
-	
-	ldr		r4, move_ptr
-	ldrb	r5, [r4, #0]	; this gives us the next movement - series of ittts
-	
-	; w = 0x77
-	cmp		r5, #0x77
-	itt		eq
-	moveq	r0, #1			; value for change_ypos subroutine
-	bleq	change_ypos
-	beq		after_if		; no linking intentionally
-
-	; a == 0x61
-	cmp		r5, #0x61
-	itt		eq
-	moveq	r0, #-1
-	bleq	change_xpos
-	beq		after_if
-
-	; s == 0x73
-	cmp		r5, #0x73
-	itt		eq
-	moveq	r0, #-1
-	bleq	change_ypos
-	beq		after_if
-
-	; d == 0x64
-	cmp		r5, #0x64
-	itt		eq
-	moveq	r0, #1
-	bleq	change_xpos
-	; no need for beq after_if, as that's coming up next
-after_if:
-
-	; get current position
-	ldr		r6, ypos_ptr
-	ldrb	r1, [r6, #0]
-
-	ldr		r4, xpos_ptr
-	ldrb	r0, [r4, #0]
-	
-	calculate_offset r4, r6, r0
-
-	bl		detect_collision
-
-	; if a collision has occured, then handle it
-	cmp		r2, #1
-	beq		end_game
-
-	; past this point, no collision has occured
-
-	ldr		r2, board_ptr		; get address of board ptr, use r0 as offset with new position
-	mov		r1, #star			; move ascii star into r1
-	strb	r1, [r2, r0]		; r0 contains offset, store a ascii star at the new position
-
-	; increment score
-	ldr		r2, score_ptr
-	ldrb	r3, [r2, #0]		; load current score
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-end_game:
-
-
-
-	pop		{r4-r12, lr}
 	mov		pc, lr
+
+
+
+
+
+
 
 
 

@@ -1,1 +1,2 @@
-# mdBook
+# mdBook Documentation and GitHub pages
+All documentation will be hosted on GitHub pages, publically.  The docs will be written in Markdown and built in mdBook.  A single-file pdf will be used for submission for ABET accredidation purposes.

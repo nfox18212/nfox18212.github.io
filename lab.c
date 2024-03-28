@@ -1,7 +1,7 @@
-extern void lab5(void);
+extern void lab7void);
 
 
 int main()
 {
-    lab5();
+    lab7();
 }
