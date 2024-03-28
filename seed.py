@@ -18,7 +18,12 @@ def colorIdx(idx):
         case 5:
             ret = "white"
         case _:
-            return None
+            ret = None
+    if(colorCount[ret] > 9):
+        return None
+    
+    colorCount[ret] = colorCount[ret] + 1
+    return ret
 
 def faceIdx(idx):
     # Expecting a integer input, 100-622
@@ -30,11 +35,31 @@ def faceIdx(idx):
     return faceList[face][row][col]
 
 def pickColor(seed):
-    face = seed % 6 # picks 0-6
+    idx = 0
+    contents = 0
+    while(contents == 0):
+        (newSeed,face) = divmod(seed,6) # picks 0-6
+        (newSeed,row) = divmod(newSeed, 3)
+        (newSeed,col) = divmod(newSeed, 3)
+        idx = 100*face + 10*row + col
+        (newSeed,color) = divmod(newSeed, 6)
+        color = colorIdx(color)
+        newSeed = newSeed << 4
+        contents = faceIdx(idx)
+        if(contents == 0):
+            faceList[face][row][col] = colorDict[color]
+            break
+        else:
+            continue
+
+    print(f"idx={idx},seed={newSeed}, contents={contents}")
+    # seed = (seed) ^ (seed >> 4)    
+    return seed
 
 global faceList
 global time_now
 global colorCount
+global colorDict
 
 colorCount = {
     "red" : 0,
@@ -45,6 +70,15 @@ colorCount = {
     "white" : 0
 }
 
+colorDict = {
+    "red" : 1,
+    "blue" : 2,
+    "orange" : 3,
+    "green" : 4,
+    "purple" : 5,
+    "white" : 6
+}
+
 f1 = np.zeros([3,3])
 f2 = np.zeros([3,3])
 f3 = np.zeros([3,3])
@@ -53,11 +87,15 @@ f5 = np.zeros([3,3])
 f6 = np.zeros([3,3])
 f3[2][0] = 7
 faceList = [f1, f2, f3, f4, f5, f6]
-time_now = time.time_ns()
+seed = time.time_ns()
+
+for i in range(54):
+    seed = pickColor(seed)
+
+for face in faceList:
+    print(face)
 
 
-
-print(faceIdx(320))
 
 
 
