@@ -6,3 +6,10 @@ Debug
 # dotfiles
 !.*
 Debug
+# NO VENV
+lib
+lib64
+bin
+.settings
+book
+pyvenv.cfg
