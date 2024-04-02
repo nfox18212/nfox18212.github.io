@@ -35,6 +35,24 @@ def tpose(mat):
             newMat[row,col] = mat[col, row]
     return newMat
 
+def rotate(mat,angle):
+    # angle is value 0-3
+    newMat = np.zeros([3,3])
+
+    for i in range(angle):
+        # print(i)
+        if i == 0:
+            newMat = tpose(mat)
+        else:
+            newMat = tpose(newMat)
+        newMat = rowReflection(newMat)
+        
+
+    return newMat
+
+
+
+
 mat = np.array([
     [100,101,102],
     [110,111,112],
@@ -46,13 +64,20 @@ omat = np.array([
     [120,121,122]
 ])
 
-print(mat)
+def mprint(i, mat):
+    print(f"Matrix rotation of value {i} gives:\n {mat}")
 
-mat = tpose(mat)
-print(mat)
+mprint(0,mat)
 
-mat = rowReflection(mat)
-print(mat)
+mat = rotate(omat,1)
+mprint(1,mat)
+
+mat = rotate(omat, 2)
+mprint(2,mat)
+
+mprint(3, rotate(omat, 3))
+
+
 
 
 

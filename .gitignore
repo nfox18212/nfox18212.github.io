@@ -14,3 +14,4 @@ bin
 book
 pyvenv.cfg
 venv
+*.code-workspace
