@@ -22,39 +22,4 @@ If the current cell is in the format XX0 or XX1, then going East will always res
 | N/A     | N/A     | -010    | N/A     | N   |
 | N/A     | N/A     | N/A     | -001    | W   |
 
-All other movements will need to be indexed using the adjacency list, but this removes the need to specify 24 cells in the .data section of the assembly program.  Less manual work is better.  Below will be the adjacency list that represents all the required cells:
-
-[markdown table gen](https://www.tablesgenerator.com/markdown_tables#)
-
-| Cell Index | East | South | North | West |
-|------------|------|-------|-------|------|
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
-|            |      |       |       |      |
+All other movements will need to be indexed using the adjacency list, but this removes the need to specify 24 cells in the .data section of the assembly program.  Less manual work is better.  The mapping of what cell is adjacent to what will be [in this google sheet.]()
