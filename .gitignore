@@ -12,6 +12,9 @@ lib64
 bin
 .settings
 book
+.html
 pyvenv.cfg
 venv
 *.code-workspace
+book/docs/book.html
+book/docs/*

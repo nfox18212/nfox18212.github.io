@@ -6,8 +6,8 @@
 # Code Base
 - [Data Structures](data/datastructures.md)
   - [Matrices](data/matrix.md)
-  - [Adjacency List](data/alist.md)
   - [Tables](data/tables.md)
+  - [Adjacency List](data/alist.md)
   - [Linear Algebra](data/alg.md)
 - [Random Numbers](rng/rng.md)
   - [Timers](rng/timers.md)

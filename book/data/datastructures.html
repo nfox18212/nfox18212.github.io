@@ -88,7 +88,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><li class="part-title">Introduction</li><li class="chapter-item expanded affix "><li class="part-title">Code Base</li><li class="chapter-item expanded "><a href="../data/datastructures.html" class="active"><strong aria-hidden="true">1.</strong> Data Structures</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../data/matrix.html"><strong aria-hidden="true">1.1.</strong> Matrices</a></li><li class="chapter-item expanded "><a href="../data/list.html"><strong aria-hidden="true">1.2.</strong> Adjacency List</a></li></ol></li><li class="chapter-item expanded "><a href="../rng/rng.html"><strong aria-hidden="true">2.</strong> Random Numbers</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../rng/timers.html"><strong aria-hidden="true">2.1.</strong> Timers</a></li><li class="chapter-item expanded "><a href="../rng/seed.html"><strong aria-hidden="true">2.2.</strong> Seed</a></li><li class="chapter-item expanded "><a href="../rng/fillboard.html"><strong aria-hidden="true">2.3.</strong> Board Filling</a></li></ol></li><li class="chapter-item expanded "><a href="../board/board.html"><strong aria-hidden="true">3.</strong> Board</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../board/layout.html"><strong aria-hidden="true">3.1.</strong> Layout in Memory</a></li><li class="chapter-item expanded "><a href="../board/rot.html"><strong aria-hidden="true">3.2.</strong> Rotation</a></li><li class="chapter-item expanded "><a href="../data/alg.html"><strong aria-hidden="true">3.3.</strong> Linear Algebra</a></li></ol></li><li class="chapter-item expanded "><a href="../pause/pause.html"><strong aria-hidden="true">4.</strong> Pausing</a></li><li class="chapter-item expanded "><a href="../layout/layout.html"><strong aria-hidden="true">5.</strong> Project Layout</a></li><li class="chapter-item expanded affix "><li class="part-title">Documentation</li><li class="chapter-item expanded "><a href="../docs/book.html"><strong aria-hidden="true">6.</strong> mdBook</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><li class="part-title">Introduction Temp</li><li class="chapter-item expanded affix "><li class="part-title">Code Base</li><li class="chapter-item expanded "><a href="../data/datastructures.html" class="active"><strong aria-hidden="true">1.</strong> Data Structures</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../data/matrix.html"><strong aria-hidden="true">1.1.</strong> Matrices</a></li><li class="chapter-item expanded "><a href="../data/tables.html"><strong aria-hidden="true">1.2.</strong> Tables</a></li><li class="chapter-item expanded "><a href="../data/alist.html"><strong aria-hidden="true">1.3.</strong> Adjacency List</a></li><li class="chapter-item expanded "><a href="../data/alg.html"><strong aria-hidden="true">1.4.</strong> Linear Algebra</a></li></ol></li><li class="chapter-item expanded "><a href="../rng/rng.html"><strong aria-hidden="true">2.</strong> Random Numbers</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../rng/timers.html"><strong aria-hidden="true">2.1.</strong> Timers</a></li><li class="chapter-item expanded "><a href="../rng/seed.html"><strong aria-hidden="true">2.2.</strong> Seed</a></li><li class="chapter-item expanded "><a href="../rng/fillboard.html"><strong aria-hidden="true">2.3.</strong> Board Filling</a></li></ol></li><li class="chapter-item expanded "><a href="../board/board.html"><strong aria-hidden="true">3.</strong> Board</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../board/layout.html"><strong aria-hidden="true">3.1.</strong> Layout in Memory</a></li><li class="chapter-item expanded "><a href="../board/rot.html"><strong aria-hidden="true">3.2.</strong> Rotation and Player Orientation</a></li><li class="chapter-item expanded "><a href="../board/movement.html"><strong aria-hidden="true">3.3.</strong> Player Movement</a></li></ol></li><li class="chapter-item expanded "><a href="../pause/pause.html"><strong aria-hidden="true">4.</strong> Pausing</a></li><li class="chapter-item expanded "><a href="../layout/layout.html"><strong aria-hidden="true">5.</strong> Project Layout</a></li><li class="chapter-item expanded affix "><li class="part-title">Documentation</li><li class="chapter-item expanded "><a href="../docs/book.html"><strong aria-hidden="true">6.</strong> mdBook</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -173,7 +173,19 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="data-structures"><a class="header" href="#data-structures">Data Structures</a></h1>
+                        <h1 id="data-structures-overview"><a class="header" href="#data-structures-overview">Data Structures Overview</a></h1>
+<p>We will be manually creating multiple data structures and subrotuines to handle these data structures. All of these data structures will be built first before all other subroutines to allow us to work with some level of abstraction.  The data structures created will be matrices and three lookup tables.</p>
+<h2 id="matrices"><a class="header" href="#matrices">Matrices</a></h2>
+<p>Seven matrices will be used, with six of these matrices representing the six faces of the cube.  The seventh matrix will be the display matrix, the only matrix that will actually be rendered.  These matrices will store metadata and data that contain information about the face number, the cell index in row,column format and the color contents of the cell.</p>
+<p>The display matrix will contain the player's avatar, and will be a copy of one of the six face matrices, except with a rotation imposed on it depending on the player's orienation.  To assist with this, three key linear algebra operations will be implemented:  Row Reflection, Column Reflection, and Transposition.  More information can be found in the <a href="board/rot.html">Rotation and Player Orientation</a> chapter. <!-- This should convert and link to the compiled html page --></p>
+<h2 id="lookup-tables"><a class="header" href="#lookup-tables">Lookup Tables</a></h2>
+<p>Three lookup tables will be created to simplify the logic: the Adjacency List (a-list), the Face Orientation table (foTab), and the Relative to Cardinal Direction table (rcdTab).  Important information will be stored in these tables, and multiple subroutines will be written to access the data in them.  Details about the latter two tables are described <a href="./tables.html">here</a>.</p>
+<h3 id="adjacency-list"><a class="header" href="#adjacency-list">Adjacency List</a></h3>
+<p>The a-list is a lookup table that specifies what each cell is adjacent to.  There will always be four other cells that are adjacent to the current cell, one for each of the cardinal directions.  The direction is specified both within the assembly implementation of it, and in the pattern.  The pattern used through is East-South-North-West.  So if you go to Cell ID 400 and go to offset 4, you will be looking for the cell to the West of Cell 400.  Details of implementation will be <a href="./alist.html">here</a>.</p>
+<h3 id="face-orientation-table"><a class="header" href="#face-orientation-table">Face Orientation Table</a></h3>
+<p>The foTab is a lookup table that tells you what the player's new orientation will be given the current face and the move the player is moving to.  For example, if the player is on Face 2 and moves to Face 6, the player will experience a rotation of 270 degrees.  This table is based off of the orthographic projection of the cube and is easiest to understand if you have a physical object such as a Rubik's cube to mimic the rotation change.  More details are found in <a href="../board/rot.html">the rotation section</a>.</p>
+<h3 id="relative-to-cardinal-direction-table"><a class="header" href="#relative-to-cardinal-direction-table">Relative to Cardinal Direction Table.</a></h3>
+<p>The rcdTable is a lookup table that converts relative directions to the absolute, cardinal directions.  Relative directions are what the player inputs, up down left right from the w, a, s, and d keys.  Because what cell the player will move to when inputting a direction will change based on orientation, having some form of absolute direction to use as a stable index is vital.</p>
 
                     </main>
 
@@ -198,6 +210,22 @@
 
         </div>
 
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
 
 
 
