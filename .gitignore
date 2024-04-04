@@ -18,3 +18,5 @@ venv
 *.code-workspace
 book/docs/book.html
 book/docs/*
+alist.py
+newhex.py
