@@ -1,4 +1,4 @@
-extern void lab7void);
+extern void lab7(void);
 
 
 int main()

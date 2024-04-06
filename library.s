@@ -98,6 +98,7 @@ init:
 	bl		gpio_init			; init gpio
 	bl		uart_interrupt_init ; init interrupts for uart
 	bl		gpio_interrupt_init
+	bl		timer_init
 	pop		{r4-r12,lr}
 	mov		pc, lr				; return
 
@@ -184,6 +185,60 @@ uart_init:
 
 	POP {r4-r12,lr}  	; Restore registers from stack
 	MOV pc, lr
+
+timer_init:
+	push	{r4-r12, lr}
+	; connect clock to timer 0
+	mov		r4, #0xe604
+	movt	r4, #0x400f
+	ldr		r5, [r4, #0]
+	orr		r5, r5, #1
+	str		r5, [r4, #0]
+
+	; disable timer 0
+	mov		r4, #0x0000
+	movt	r4, #0x4003
+	ldr		r5, [r4, #0xC]
+	mov		r6, #0xFFFE
+	movt	r6, #0xFFFF
+	and		r5, r6, r5
+	str		r5, [r4, #0xC]
+
+	; set timer to 32 bit mode
+	ldr		r5, [r4, #0]
+	orr		r5, r5, #1
+	str		r4, [r4, #0]
+
+	; set to periodic mode
+	ldr		r5, [r4, #0x4]
+	orr		r5, r5, #2
+	str		r5, [r4, #0]
+
+	; set period to 8M ticks, so twice per second
+	mov		r5, #0x2400
+	movt	r5, #0x007A
+	str		r5, [r4, #0x28]
+
+	; setup to interrupt
+	mov		r6, #0xE100
+	movt	r6, #0xE000
+	ldr		r5, [r6, #0x0]
+	mov		r7, #0
+	movt	r7, #0x8000
+	orr		r5, r6, r5
+	str		r5, [r6, #0]
+	; r4 is still 0x40030000
+	ldr		r5, [r4, #0x18]
+	orr		r5, r5, #0x1
+	str		r5, [r4, #0x18]
+
+	; re-enable timer
+	ldr		r5, [r4, #0xC]
+	orr		r5, r5, #1
+	str		r5, [r4, #0xC]
+
+	pop		{r4-r12, lr}
+	mov		pc, lr
 
 gpio_init:
 	PUSH {r4-r12,lr}	; Spill registers to stack
@@ -592,5 +647,63 @@ one_digit:
 							; push at the top of this routine from the stack.
 	mov pc, lr
 
+uart_interrupt_init:
+
+
+
+	; Your code to initialize the UART0 interrupt goes here
+
+	mov 	r1, #0xC000		; UARTIM base address
+	movt 	r1, #0x4000
+	ldr 	r0, [r1, #0x38]	; UARTIM offset
+	ORR 	r0, r0, #0x10	; set RXIM pin 4
+	str 	r0, [r1, #0x38]	; store set pin
+
+	mov 	r1, #0xE000		; e0 base address
+	movt 	r1, #0xE000
+	ldr 	r0, [r1, #0x100]	; load offset
+	ORR 	r0, r0, #0x20	; set bit 5 to 1
+	str 	r0, [r1, #0x100]	; store change
+
+	MOV pc, lr
+
+
+gpio_interrupt_init:
+
+	; Your code to initialize the SW1 interrupt goes here
+	; Don't forget to follow the procedure you followed in Lab #4
+	; to initialize SW1.
+	push	{r4-r11,lr}
+
+	mov		r4, #0x5000				; port F address
+	movt	r4, #0x4002				; upper half of port F
+	ldrb	r5, [r4, #0x404]		; store a 0 to set GPIO interrupt to be edge sensitive
+	and		r5, r5, #sw1mask		; bitmask for pin 4
+	strb	r5, [r4, #0x404]
+
+	ldrb	r5, [r4, #0x408]		; store 1 to configure to interrupt on both edges - so we store a 0
+	orr		r5, r5, #sw1write
+	strb	r5, [r4, #0x408]
+
+	ldrb	r5, [r4, #0x40C]		; store 0 to configure to interrupt on falling edge
+	and		r5, r5, #sw1mask
+	strb	r5, [r4, #0x40C]
+
+	ldrb	r5, [r4, #0x410]		; store 1 to enable interrupts
+	orr		r5, r5, #sw1write
+	strb	r5, [r4, #0x410]
+
+	; different base address for en0
+	mov		r4, #0xE000
+	movt	r4, #0xE000
+
+	ldr		r5, [r4, #0x100]		; store 1 at E000E100
+	mov		r6, #0x0				; this is to set pin 30 to 1 to enable port F to interrupt
+	movt	r6, #0x4000
+	orr		r5, r5, r6				; set to 1
+	str		r5, [r4, #0x100]
+
+	pop		{r4-r11,lr}
+	mov		pc, lr
 
 	.end

@@ -95,7 +95,7 @@ mydata:			.byte		0x20	; This is where you can store data.
 	.global output_string			; This is from your Lab #4 Library
 	.global uart_init				; This is from your Lab #4 Library
 	.global lab7
-	.global	init_datastructures
+	.global new_o
 
 ptr_to_prompt:		.word prompt
 ptr_to_mydata:		.word mydata
@@ -126,13 +126,15 @@ lab7:							; This is your main routine which is called from
 ; your C wrapper.
 	push 	{r4-r12,lr}   		; Preserve registers to adhere to the AAPCS
 	bl 		init
-	bl		init_datastructures
+	clc							; clear screen
+	; just try out the new fotab data subroutine
+	mov		r0, #6				; represent face 6
+	mov		r1, #0x73			; represent facing south
+	bl		new_o
+	nop
 
-	clc		; clear screen
-
-	
+	pop		{r4-r12,lr}
 	mov		pc, lr
-
 
 
 
@@ -225,7 +227,7 @@ UART0_Handler:
 cont_uart:
 
 	; now we store r0 into nextMovement
-	ldr		r4, mov_ptr
+	ldr		r4, move_ptr
 	strb	r0, [r4, #0]
 
 	; we're done so exit
