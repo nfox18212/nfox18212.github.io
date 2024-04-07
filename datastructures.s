@@ -73,7 +73,7 @@ alist:		.half 0x0064, 0x0065, 0x106E, 0x21A4, 0x31F6
 ; up: bits 6,7 - down: bits 4,5 - left: bits 2,3 right: 0,1
 ; East: 00,  South: 01, North: 10, West: 11
 ; table that converts relative movement (up, down, left, right) into cardinal directions
-rcttab:		.half 0x65B4, 0x732D, 0x6E8B, 0x77D2
+rcttab:		.half 0x00B4, 0x012D, 0x028B, 0x03D2
 			.byte 0x00 ; null terminator byte
 
 	.text
@@ -96,28 +96,28 @@ new_o:
 	cmp		r1, #0x65 		; e
 	it		eq
 	moveq	r4, #1			; one byte offset
-	beq		after_if
+	beq		foAfter_if
 
 	cmp		r1, #0x73
 	it		eq				; s
 	moveq	r4, #2			; two byte offset
-	beq		after_if
+	beq		foAfter_if
 
 	cmp		r1, #0x6E		; n
 	it		eq
 	moveq	r4, #3
-	beq		after_if
+	beq		foAfter_if
 
 	cmp		r1, #0x77		; w
 	ite		eq
 	moveq	r4, #4
 	movne	r4, #0xFFFF		; should cause a crash if the given character isn't ensw
 	
-after_if:
+foAfter_if:
 
 	ldr		r5, fotabp		; get the address of the fotab
 	mov		r10, r0			; copy	r0 into r10 to preserve it
-offset_calc:				; nothing should branch to this label, only for debug	
+foOffset_calc:				; nothing should branch to this label, only for debug	
 	sub		r10, r10, #1	; to calculate offset, offset = 5*(fid - 1)+dir, where dir is 1,2,3,4 based on cardinal direction and fid is the face id
 	mov		r9, #5			; mult can't use immediates
 	mla		r4, r10, r9, r4 ; r4 = (r10*r9)+r4
@@ -135,6 +135,62 @@ offset_calc:				; nothing should branch to this label, only for debug
 rcd:
 	; r0: current character orientation
 	; r1: movement, relative directon wasd
-	; converts wasd to NSEW
+	; converts wasd to NSEW, returns in r0 and clears r1
 	push	{r4-r12,lr}
 	
+	
+
+	; offset is based on passed in orientation
+	cmp 	r0, 0x0
+	it		eq
+	moveq	r4, #1
+	beq		rcdAfter_if
+
+	cmp 	r0, 0x1
+	it		eq
+	moveq	r4, #3
+	beq		rcdAfter_if
+
+	cmp 	r0, 0x2
+	it		eq
+	moveq	r4, #0x5
+	beq		rcdAfter_if
+
+	cmp 	r0, 0x3
+	it		eq
+	moveq 	r4, #0x7
+	beq		rcdAfter_if
+
+rcdAfter_if:
+
+	ldr		r5, rcdtabp
+	ldrb	r6, [r5, r4]	; byte offset is in r4
+	; now mask based on direction
+	cmp		r1, #0x65		; w - up
+	itt		eq
+	andeq	r0, r0, #0xC0
+	lsreq	r0, r0, #6		; shift right 6 bits to strip nullspace
+	beq		rcdAfter_if2
+
+	cmp		r1, #0x73		; a - left
+	itt		eq
+	andeq	r0, r0, #0x30
+	lsreq	r0, r0, #4		; nullspace is 4 this time
+	beq		rcdAfter_if2
+
+	cmp		r1, #0x6E
+	itt		eq
+	andeq	r0, r0, #0x0C
+	lsreq	r0, r0, #2		; only 2, next won't need a shift
+	beq		rcdAfter_if2
+
+	cmp		r1, #0x77
+	it		eq
+	andeq	r0, r0, #0x3	; no shift needed
+	; why branch lol
+
+rcdAfter_if2:
+	; not much to do after this point
+	mov		r1, #0			; clear r1
+	mov		pc, lr 			; return
+
