@@ -11,6 +11,7 @@ fotab:	    .byte 0x01, 0x60, 0x24, 0x48, 0x5C
 			.byte 0x05, 0x10, 0x27, 0x49, 0x2F
 			.byte 0x06, 0x32, 0x25, 0x4B, 0x1C
 			.byte 0x00 ; null terminator byte
+ 
 
 ; format described in docs
 ; simple description: first 4 bits are color, next 12 are the cell index.  0,1,2,3 are cardinal direction for East, South, North, West and other cell indexes.
@@ -66,7 +67,6 @@ alist:		.half 0x0064, 0x0065, 0x106E, 0x21A4, 0x31F6
 			.half 0x0263, 0x0264, 0x126D, 0x2259, 0x3264
 			.half 0x0264, 0x0138, 0x126E, 0x225A, 0x3263
 			.byte 0x00 ; null byte at end
-
 
 
 
@@ -141,22 +141,22 @@ rcd:
 	
 
 	; offset is based on passed in orientation
-	cmp 	r0, 0x0
+	cmp 	r0, #0x0
 	it		eq
 	moveq	r4, #1
 	beq		rcdAfter_if
 
-	cmp 	r0, 0x1
+	cmp 	r0, #0x1
 	it		eq
 	moveq	r4, #3
 	beq		rcdAfter_if
 
-	cmp 	r0, 0x2
+	cmp 	r0, #0x2
 	it		eq
 	moveq	r4, #0x5
 	beq		rcdAfter_if
 
-	cmp 	r0, 0x3
+	cmp 	r0, #0x3
 	it		eq
 	moveq 	r4, #0x7
 	beq		rcdAfter_if

@@ -21,9 +21,10 @@ def colorIdx(cidx):
             raise RuntimeError # should crash
     if(colorCount[ret] >= 9):
         raise NameError("Color Full")
-    
-    colorCount[ret] = colorCount[ret] + 1
-    return ret
+        return NameError
+    else:
+        colorCount[ret] = colorCount[ret] + 1
+        return ret
 
 def faceIdx(idx):
     # Expecting a integer input, 100-622
@@ -79,7 +80,7 @@ def pickColor(seed):
         except NameError:
             # if we enter this except, we need to pick a different color
             # print("Tried to use filled color")
-            if(isFull):
+            if(isFull()):
                 return newSeed
             newSeed = (newSeed ^ seed) << 4 # make seed messier
             continue
@@ -93,7 +94,7 @@ def pickColor(seed):
         else:
             continue
 
-    print(f"idx={idx},seed={newSeed}, filled face = {faceList[face-1]}")
+    print(f"idx={idx},seed={newSeed}, filled face = \n{faceList[face-1]}")
     # seed = (seed) ^ (seed >> 4)    
     return newSeed
 
@@ -126,7 +127,6 @@ f3 = np.zeros([3,3])
 f4 = np.zeros([3,3])
 f5 = np.zeros([3,3])
 f6 = np.zeros([3,3])
-f3[2][0] = 7
 faceList = [f1, f2, f3, f4, f5, f6]
 seed = time.time_ns()
  
@@ -137,7 +137,7 @@ for _ in iter(int, 1): # spin forever
     if(isFull()):
         break
 
-# TODO: Finish writing the algorithm for seeds
+# ! IMPORTANT: This file is deprecated in favor of a new and better algorithm
 
 for face in faceList:
     print(face)

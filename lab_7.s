@@ -128,9 +128,8 @@ lab7:							; This is your main routine which is called from
 	bl 		init
 	clc							; clear screen
 	; just try out the new fotab data subroutine
-	mov		r0, #6				; represent face 6
-	mov		r1, #0x73			; represent facing south
-	bl		new_o
+	mov		r0, #25
+	ror		r1, r0, #29
 	nop
 
 	pop		{r4-r12,lr}
