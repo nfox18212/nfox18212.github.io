@@ -48,19 +48,37 @@ def swap(idx):
     colorOrder[idx1] = color2
     colorOrder[idx2] = color1
 
+def newSeed(oldSeed):
+    period = 0
+    lfsr = oldSeed & 0xFFFF # take nibble to improve performance
+    target = oldSeed & 0xFFFF
+    for _ in iter(int,1):
+        lfsr ^= lfsr >> 7
+        lfsr ^= lfsr << 9
+        lfsr ^= lfsr >> 13
+        # lfsr ^= lfsr << 5
+        lfsr &= 0xFFFF # make sure its a 16 bit number
+        period += 1
+        if(lfsr == target):
+            break
+    
+    return period
 
 global MAXB
 MAXB = 32
 
 # seed = time.time_ns()
-seed = 0xE1D8751E
+seed = 0x5f3759df
+
+# seed2 = newSeed(seed)
+# print(hex(seed2))
 
 global colorOrder
 colorOrder = []
 
 initColorOrder()
 
-for i in range(100000):
+for i in range(1000):
     idx = seed & 0x3F
     # make sure index isn't greater than the color list
     while(idx > 0x35):
@@ -68,8 +86,12 @@ for i in range(100000):
         idx = idx >> 1
 
     swap(idx)
-    # TODO: Make this seed value more random
-    seed = ((seed >> 1) ^ (seed & 0x5f3759df)) ^ (seed - 1) # magic number stolen from quake 3 source code
+    seed ^= seed >> 7
+    seed ^= seed << 13
+    seed ^= seed >> 5
+    seed ^= seed << 9
+    seed &= 0xFFFFFFFF
+    print(hex(seed))
 
 print(colorOrder)
 
