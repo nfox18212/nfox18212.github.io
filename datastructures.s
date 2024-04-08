@@ -190,7 +190,9 @@ rcdAfter_if:
 	; why branch lol
 
 rcdAfter_if2:
+
 	; not much to do after this point
 	mov		r1, #0			; clear r1
 	mov		pc, lr 			; return
+
 
