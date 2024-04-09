@@ -1,7 +1,15 @@
+clc .macro
+	push	{r0}
+	mov		r0, #clear	; form feed
+	bl	output_character
+	pop		{r0}
+	.endm
 
 	.data
 
 mats: 		.space 	128 	; matrix storage, size will need to change - sebastien this is yours to implement
+
+crashstr:	.cstring "In get_cell a direction greater than 4 was specified, crashing program\n"
 
 ; yes, this is kind of unreadable.  just read the docs, specifically about adjacency list
 fotab:	    .byte 0x01, 0x60, 0x24, 0x48, 0x5C
@@ -88,10 +96,12 @@ rcttab:		.half 0x00B4, 0x012D, 0x028B, 0x03D2
 	.global get_cell
 	.global extract_cid
 	.global div_and_mod ; from library
+	.global	output_string ; from library
 
 fotabp:		.word	fotab
 alistp:		.word 	alist
 rcdtabp:	.word 	rcttab
+crashstrp:	.word 	crashstr
 
 new_o:
 	; r0: current face as number 1-6
@@ -248,7 +258,7 @@ extract_cid:
 	mov		r1, #10		; this will extract row and column: row => r0, col => r1
 	bl		div_and_mod
 	; shuffle values around to get to the desired return structure
-	mov		r1, r2		; col should go into r2
+	mov		r2, r1		; col should go into r2 from r1, r1 => r2
 	mov		r1, r0		; row should go into r1
 	mov		r0, r4		; face number should go into r0
 	; now we return
@@ -277,10 +287,8 @@ get_cell:
 	addne	r11, r4, #1		; turn direction into offset and add it to r11, which is the new offset
 	; only do this if the direction is not 4.  This for the internal offset, or offset within the alist to get what things are adjacent to.  4 returns the current cell, which gives access to color
 
-	; if r4 > 4, something has gone horribly wrong.  cause a crash
-	it		gt
-	moveq	pc, #0x0010		; should crash program
-	; some form of screen clear and debug message should go here as well
+	; if r4 > 4, something has horribly wrong and crash the program
+	bgt		crash
 
 
 	bl		extract_cid
@@ -292,10 +300,10 @@ get_cell:
 	mla		r11, r0, r5, r11 ; r11 *= 45*face + r11
 
 	mov		r5, #15
-	mla		r11, r1, r5, r11 ; r11 = r11 + r1*r5
+	mla		r11, r1, r5, r11 ; r11 = r11 + r1*15
 
 	mov		r5, #5
-	mla		r11, r2, r5, r11 ; r11 = r11 + r1*r5
+	mla		r11, r2, r5, r11 ; r11 = r11 + r2*5
 
 
 	
@@ -306,3 +314,41 @@ get_cell:
 
 	pop		{r4-r12,lr}
 	mov		pc, lr 
+
+crash:
+	; expand to take custom strings?  if so, move to library.s
+	; we're not preserving r4-r12 since this is not a subroutine that will be returned from
+	; make this code uninterruptible
+	; disable timer 0
+	mov		r4, #0x0000
+	movt	r4, #0x4003
+	ldr		r5, [r4, #0xC]
+	mov		r6, #0xFFFE
+	movt	r6, #0xFFFF
+	and		r5, r6, r5
+	str		r5, [r4, #0xC]
+	
+
+	; disable uart interrupts
+	mov 	r1, #0xE000		; e0 base address
+	movt 	r1, #0xE000
+	ldr 	r0, [r1, #0x100]	; load offset
+	mov		r4, #0xFFDF			; 1s cmp of 0x20
+	movt	r4, #0xFFFF
+	and		r0, r4, #0x20		; set bit 5 to 0
+	str 	r0, [r1, #0x100]	; store change
+
+	; disable gpio interrupts
+	ldrb	r5, [r4, #0x410]		; store 0 to disable interrupts
+	mov		r6, #0xFF10
+	movt	r6, #0xFFFF
+	and		r5, r5, r6			
+	strb	r5, [r4, #0x410]
+
+	ldr		r0, crashstrp	; get string addr
+	bl		output_string	; print it
+
+	mov		pc, #0x0010		; should crash program
+	; if not, this will
+	mov		r12, #0
+	ldr		r11, [r12, #0]  ; this WILL cause a fault

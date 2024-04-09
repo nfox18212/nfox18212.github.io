@@ -131,10 +131,12 @@ lab7:							; This is your main routine which is called from
 	push 	{r4-r12,lr}   		; Preserve registers to adhere to the AAPCS
 	bl 		init
 	clc							; clear screen
-	; test extract_cid
-	mov		r0, #315			; test to see if extract_cid works
-	bl		extract_cid
+	; test get_cell
+	mov		r0, #312			
+	mov		r1, #4				; specify direction 4 to get specifically cell 312
+	bl		get_cell			; should set color and return the new cell in r0
 	nop
+
 
 	pop		{r4-r12,lr}
 	mov		pc, lr

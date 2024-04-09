@@ -21,3 +21,6 @@ book/docs/*
 
 # scripts directory
 x*
+alist.py
+newhex.py
+.launches/CSE379-Lab7.launch
