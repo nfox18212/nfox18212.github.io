@@ -74,7 +74,7 @@ seed = 0x5f3759df
 # print(hex(seed2))
 
 global colorOrder
-colorOrder = []
+colorOrder : List[int] = []
 
 initColorOrder()
 

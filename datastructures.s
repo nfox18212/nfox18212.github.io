@@ -249,7 +249,7 @@ extract_cid:
 	bl		div_and_mod
 	; shuffle values around to get to the desired return structure
 	mov		r1, r2		; col should go into r2
-	mov		r0, r1		; row should go into r1
+	mov		r1, r0		; row should go into r1
 	mov		r0, r4		; face number should go into r0
 	; now we return
 	pop		{r4, lr}

@@ -95,6 +95,10 @@ mydata:			.byte		0x20	; This is where you can store data.
 	.global output_string			; This is from your Lab #4 Library
 	.global uart_init				; This is from your Lab #4 Library
 	.global lab7
+	.global set_color
+	.global get_color
+	.global get_cell
+	.global extract_cid
 	.global new_o
 
 ptr_to_prompt:		.word prompt
@@ -127,9 +131,9 @@ lab7:							; This is your main routine which is called from
 	push 	{r4-r12,lr}   		; Preserve registers to adhere to the AAPCS
 	bl 		init
 	clc							; clear screen
-	; just try out the new fotab data subroutine
-	mov		r0, #25
-	ror		r1, r0, #29
+	; test extract_cid
+	mov		r0, #315			; test to see if extract_cid works
+	bl		extract_cid
 	nop
 
 	pop		{r4-r12,lr}
