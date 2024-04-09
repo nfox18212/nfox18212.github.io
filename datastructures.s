@@ -77,13 +77,21 @@ rcttab:		.half 0x00B4, 0x012D, 0x028B, 0x03D2
 			.byte 0x00 ; null terminator byte
 
 	.text
-	
+
 	.global new_o
+	.global alistp
+	.global fotabp
+	.global rcdtabp
+	.global rcd
+	.global set_color
+	.global get_color
+	.global get_cell
+	.global extract_cid
+	.global div_and_mod ; from library
 
 fotabp:		.word	fotab
 alistp:		.word 	alist
 rcdtabp:	.word 	rcttab
-
 
 new_o:
 	; r0: current face as number 1-6
@@ -195,4 +203,106 @@ rcdAfter_if2:
 	mov		r1, #0			; clear r1
 	mov		pc, lr 			; return
 
+set_color:
+	; given cell ID in r0
+	; given color in r1
+	; returns cell in r0
+	push	{r4-r12,lr}
 
+	; backup r1
+	mov		r4, r1
+	bl		get_cell
+	; now there's the cell contents in r0
+	orr		r0, r0, r4, lsl #12		; this adds the color into the cell contents
+	
+	ldr		r7, alistp 		; get the pointer to the alist, 
+	str		r0, [r7, r1]	; store the modified cell contents in the alist
+	; nothing else to do, return
+	
+	pop		{r4-r12,lr}
+	mov		pc, lr
+
+get_color:
+	; given cell ID in r0
+	; no other registers are important
+	; return color in r0
+	push	{r4-r12,lr}
+
+	bl		get_cell
+	and		r0, r0, #0xF000		; mask for the color
+	lsr		r0, #12				; shift back to 1,2,3,4,5,6
+	; return
+	pop		{r4-r12,lr}
+	mov		pc, lr
+
+
+extract_cid:
+	; input:   r0 - given cell index
+	; returns: r0 - face, r1 - row, r2 - col
+	push	{r4, lr}
+	; extract face number first, use div_mod
+	mov		r1, #100	; divide by 100, it'll return facenum in r0 and 10*row+col in r1
+	bl		div_and_mod
+	mov		r4, r0		; backup r0
+	mov		r0, r1		; this is the new thing to do divmod on
+	mov		r1, #10		; this will extract row and column: row => r0, col => r1
+	bl		div_and_mod
+	; shuffle values around to get to the desired return structure
+	mov		r1, r2		; col should go into r2
+	mov		r0, r1		; row should go into r1
+	mov		r0, r4		; face number should go into r0
+	; now we return
+	pop		{r4, lr}
+	mov		pc, lr
+
+
+
+
+get_cell:
+
+	; r0 - current cell index
+	; r1 - cardinal direction to grab - as 0 - East, 1 - South , 2 - North, 3 - West, Current Cell 
+	push	{r4-r12,lr}
+	; first we need to calculate the offset
+	; formula is: 45*(face-1)+15*row+5*col+(direction+1)
+	; first we need to extract face, row, col
+	; if dir = 4, return the current cell from the table
+	; returns cell contents in r0, offset from alist to get to cell in r1
+	mov		r4, r1 		; backup cell direction
+
+
+	; r11 will be used as the running sum when calculating offset
+	cmp		r4, #4
+	it		ne
+	addne	r11, r4, #1		; turn direction into offset and add it to r11, which is the new offset
+	; only do this if the direction is not 4.  This for the internal offset, or offset within the alist to get what things are adjacent to.  4 returns the current cell, which gives access to color
+
+	; if r4 > 4, something has gone horribly wrong.  cause a crash
+	it		gt
+	moveq	pc, #0x0010		; should crash program
+	; some form of screen clear and debug message should go here as well
+
+
+	bl		extract_cid
+	; now we have face in r0, row in r1, col in r2
+	; now calculate the formula
+	; TODO: verify that this MLA works as intended
+	mov		r5, #45		; move for multiplication
+	sub 	r0, r0, #1	; face -= 1
+	mla		r11, r0, r5, r11 ; r11 *= 45*face + r11
+
+	mov		r5, #15
+	mla		r11, r1, r5, r11 ; r11 = r11 + r1*r5
+
+	mov		r5, #5
+	mla		r11, r2, r5, r11 ; r11 = r11 + r1*r5
+
+
+	
+	ldr		r5, alistp 		; grab ptr to alist
+	ldrh	r0, [r5, r11]	; grab cell contents using the calculated offset
+	mov		r1, r11			; return the offset in r1 for set_color
+
+
+	pop		{r4-r12,lr}
+	mov		pc, lr 
