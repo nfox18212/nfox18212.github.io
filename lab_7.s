@@ -100,6 +100,7 @@ mydata:			.byte		0x20	; This is where you can store data.
 	.global get_cell
 	.global extract_cid
 	.global new_o
+	.global crash
 
 ptr_to_prompt:		.word prompt
 ptr_to_mydata:		.word mydata
@@ -131,11 +132,20 @@ lab7:							; This is your main routine which is called from
 	push 	{r4-r12,lr}   		; Preserve registers to adhere to the AAPCS
 	bl 		init
 	clc							; clear screen
+	b 		crash
 	; test get_cell
 	mov		r0, #312			
-	mov		r1, #2				; specify color two and 
-	bl		get_cell			; should set color and return the new cell in r0
+	mov		r1, #2				; specify color two
+	bl		set_color			; should set color and return the new cell in r0
+	; clear r0 to test get_color and get_cell
+	mov		r0, #312			; re-specify the cell we want to grab
+	mov		r1, #4				; grab exactly this cell
+	bl		get_cell			; see if the new cell contains the color
 	nop
+	mov		r0, #312			; again
+	bl		get_color			; should only return the color
+	nop
+
 
 
 	pop		{r4-r12,lr}

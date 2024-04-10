@@ -99,6 +99,8 @@ rcttab:		.byte 0xB4, 0x00, 0x2D, 0x01, 0x8B, 002, 0xD2, 0x93
 	.global extract_cid
 	.global div_and_mod ; from library
 	.global	output_string ; from library
+	.global dirindex
+	.global crash
 
 fotabp:		.word	fotab
 alistp:		.word 	alist
@@ -223,6 +225,8 @@ set_color:
 
 	; backup r1
 	mov		r4, r1
+	; set r1 to 4 to specify to get_cell we want exactly cell r0
+	mov		r1, #4
 	bl		get_cell
 	; now there's the cell contents in r0
 	orr		r0, r0, r4, lsl #12		; this adds the color into the cell contents
@@ -321,6 +325,99 @@ get_cell:
 	pop		{r4-r12,lr}
 	mov		pc, lr 
 
+
+
+dirindex:
+	; leaf routine, takes in character and turns it into the numerical version, or vice versa
+	; r0 - input char or num
+	
+	; cardinal
+	cmp		r0, #0 ; e
+	itt		eq
+	moveq	r0, #0x65
+	moveq	pc, lr
+
+	cmp 	r0, #1 ; s
+	itt		eq
+	moveq	r0, #0x73
+	moveq	pc, lr
+
+	cmp		r0, #2 ; n
+	itt		eq
+	moveq	r0, #0x77
+	moveq	pc, lr
+
+	cmp		r0, #3
+	itt		eq
+	moveq	r0, #0x64
+	moveq	pc, lr
+
+	; relative
+
+	cmp		r0, #0x10
+	itt		eq
+	moveq	r0, #0x61 ; a
+	moveq	pc, lr
+
+	cmp		r0, #0x11
+	itt		eq
+	moveq	r0, #0x73 ; s
+	moveq	pc, lr
+
+	cmp		r0, #0x12
+	itt		eq
+	moveq	r0, #0x77 ; w
+	moveq	pc, lr
+
+	cmp		r0, #0x13
+	itt		eq
+	moveq	r0, #0x64 ; d
+	moveq	pc, lr
+
+	cmp 	r0, #0x61 ; a
+	itt		eq
+	moveq	r0, #10
+	moveq	pc, lr
+
+	cmp		r0, #0x73 ; s
+	itt		eq
+	moveq	r0, #11
+	moveq	pc, lr
+
+	cmp		r0, #0x77 ; w
+	itt		eq
+	moveq	r0, #12
+	moveq	pc, lr
+
+	cmp		r0, #0x64 ; d
+	itt		eq
+	moveq	r0, #13
+	moveq	pc, lr
+
+	; cardinal
+	cmp		r0, #0x65 ; e
+	itt		eq
+	moveq	r0, #0
+	moveq	pc, lr		; return
+
+	cmp		r0, #0x73 ; s
+	itt		eq
+	moveq	r0, #1
+	moveq	pc, lr
+
+	cmp		r0, #0x6E ; n
+	itt		eq
+	moveq	r0, #2
+	moveq	pc, lr
+
+	cmp		r0, #0x77 ; w
+	itt		eq
+	moveq	r0, #3
+	moveq	pc, lr
+
+	; if its not any of the above stuff, crash
+	b		crash
+
 crash:
 	; expand to take custom strings?  if so, move to library.s
 	; we're not preserving r4-r12 since this is not a subroutine that will be returned from
@@ -356,5 +453,5 @@ crash:
 
 	mov		pc, #0x0010		; should crash program
 	; if not, this will
-	mov		r12, #0
+	mov		r12, #0xA
 	ldr		r6, [r12, #0]  ; this WILL cause a fault
