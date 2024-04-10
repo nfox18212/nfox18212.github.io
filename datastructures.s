@@ -83,7 +83,7 @@ alist:
 ; up: bits 6,7 - down: bits 4,5 - left: bits 2,3 right: 0,1
 ; East: 00,  South: 01, North: 10, West: 11
 ; table that converts relative movement (up, down, left, right) into cardinal directions
-rcttab:		.byte 0x00, 0xB4, 0x01, 0x2D, 0x02, 0x8B, 0x03, 0xD2 ; does this need to be swapped too????
+rcttab:		.byte 0xB4, 0x00, 0x2D, 0x01, 0x8B, 002, 0xD2, 0x93
 			.byte 0x00 ; null terminator byte
 
 	.text
@@ -227,7 +227,7 @@ set_color:
 	; now there's the cell contents in r0
 	orr		r0, r0, r4, lsl #12		; this adds the color into the cell contents
 	
-	ldr		r7, alistp 		; get the pointer to the alist, 
+	ldr		r7, alistp 		; get the pointer to the alist
 	str		r0, [r7, r1]	; store the modified cell contents in the alist
 	; nothing else to do, return
 	
@@ -276,58 +276,46 @@ get_cell:
 	; r1 - cardinal direction to grab - as 0 - East, 1 - South , 2 - North, 3 - West, Current Cell 
 	push	{r4-r12,lr}
 	; first we need to calculate the offset
-	; formula is: 45*(face-1)+15*row+5*col+(direction+1)
+	; formula is: 90*(face-1)+30*row+10*col+2*(direction+1)
 	; first we need to extract face, row, col
 	; if dir = 4, return the current cell from the table
 	; returns cell contents in r0, offset from alist to get to cell in r1
-	mov		r4, r1 		; backup cell direction
+	mov		r4, r1 		; backup the direction the character is facing
 
+	bl		extract_cid
+	; now we have face in r0, row in r1, col in r2
+	; now calculate the formula
+	; r6 will be used as the running sum when calculating offset
+	; TODO Update: mla works as intended, need to verify the formula is correct
+	mov		r5, #90		; move for multiplication
+	sub 	r0, r0, #1	; face -= 1
+	mla		r6, r0, r5, r6 ; r6 *= 45*face + r6
 
-	; r11 will be used as the running sum when calculating offset
+	mov		r5, #30
+	mla		r6, r1, r5, r6 ; r6 = r6 + r1*15
+
+	mov		r5, #10
+	mla		r6, r2, r5, r6 ; r6 = r6 + r2*5
+
+	; Account for direction, aka if the given direction is 1, the cell south to the given cell is being asked for
+	; the formula is 2*(direction+1)
+	; only do this if the direction is not 4.
+	; 4 means the caller is asking for how the given cell is stored in the alist, so returning the contents of the alist for the given cell will 
+	; give access to said cell's color
 	cmp		r4, #4
-	it		ne
-	addne	r11, r4, #1		; turn direction into offset and add it to r11, which is the new offset
-	; only do this if the direction is not 4.  This for the internal offset, or offset within the alist to get what things are adjacent to.  4 returns the current cell, which gives access to color
+	ittt	ne
+	movne	r5, #2			
+	addne	r4, r4, #1		; the add 1 part of the formula
+	mlane	r6, r4, r5, r6; r6 = r4*r5 + r6
+	
 
 	; if r4 > 4, something has horribly wrong and crash the program
 	bgt		crash
 
-
-	bl		extract_cid
-
-	; something is fucky, find out why
-	; its fucking little endian
-	mov		r5, #0x02DE
-	movt	r5, #0x2000
-	ldrb	r0, [r5, #0]
-	ldrb	r1, [r5, #1]	; grab the next one too
-	lsl		r0, r0, #8		; left shift by a byte
-	add		r0, r1, r0		; throw the contents of r1 into r0
-	nop						; bp
-
-	ldr		r5, fotabp		; face orientation table
-	ldrh	r6, [r5, #0]	; what happens
-	and		r7, r6, #0xFF00	; mask for top nibble
-	and		r8, r6, #0x00FF ; bottom nibble
-
-	; now we have face in r0, row in r1, col in r2
-	; now calculate the formula
-	; TODO: verify that this MLA works as intended
-	;mov		r5, #45		; move for multiplication
-	;sub 	r0, r0, #1	; face -= 1
-	;mla		r11, r0, r5, r11 ; r11 *= 45*face + r11
-
-	;mov		r5, #15
-	;mla		r11, r1, r5, r11 ; r11 = r11 + r1*15
-
-	;mov		r5, #5
-	;mla		r11, r2, r5, r11 ; r11 = r11 + r2*5
-
-
 	
-	;ldr		r5, alistp 		; grab ptr to alist
-	;ldrh	r0, [r5, r11]	; grab cell contents using the calculated offset
-	;mov		r1, r11			; return the offset in r1 for set_color
+	ldr		r5, alistp 		; grab ptr to alist
+	ldrh	r0, [r5, r6]	; grab cell contents using the calculated offset
+	mov		r1, r6			; return the offset in r1 for set_color
 
 
 	pop		{r4-r12,lr}
@@ -369,4 +357,4 @@ crash:
 	mov		pc, #0x0010		; should crash program
 	; if not, this will
 	mov		r12, #0
-	ldr		r11, [r12, #0]  ; this WILL cause a fault
+	ldr		r6, [r12, #0]  ; this WILL cause a fault

@@ -133,7 +133,7 @@ lab7:							; This is your main routine which is called from
 	clc							; clear screen
 	; test get_cell
 	mov		r0, #312			
-	mov		r1, #4				; specify direction 4 to get specifically cell 312
+	mov		r1, #2				; specify color two and 
 	bl		get_cell			; should set color and return the new cell in r0
 	nop
 
