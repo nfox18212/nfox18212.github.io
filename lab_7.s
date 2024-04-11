@@ -284,6 +284,8 @@ Timer_Handler:
 	add		r6, r6, #1
 	str 	r6, [r5, #0]
 
+
+
 	ldr		r7, tickp
 	ldrb	r8, [r7, #0]
 	add		r8, r8, #1		; make the timer tick

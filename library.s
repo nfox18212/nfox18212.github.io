@@ -188,29 +188,44 @@ uart_init:
 
 timer_init:
 	push	{r4-r12, lr}
-	; connect clock to timer 0
+	; connect clock to timer 0 and 1
 	mov		r4, #0xe604
 	movt	r4, #0x400f
 	ldr		r5, [r4, #0]
-	orr		r5, r5, #1
+	orr		r5, r5, #3
 	str		r5, [r4, #0]
 
 	; disable timer 0
 	mov		r4, #0x0000
 	movt	r4, #0x4003
+	; base addr for timer 1
+	add		r8, r4, #0x1000
+
 	ldr		r5, [r4, #0xC]
 	mov		r6, #0xFFFE
 	movt	r6, #0xFFFF
 	and		r5, r6, r5
 	str		r5, [r4, #0xC]
 
+	; disable timer 1
+	ldr		r5, [r8, #0xC]
+	mov		r6, #0xFFFE
+	movt	r6, #0xFFFF
+	and		r5, r6, r5
+	str		r5, [r8, #0xC]
+
 	; set timer to 32 bit mode
 	ldr		r5, [r4, #0]
 	mov		r6, #0xFFF8
 	movt	r6, #0xFFFF
 	and		r5, r6, r5	
-	; orr		r5, r5, #1 ; writing 1 turns it into rtc mode
 	str		r4, [r4, #0]
+
+	ldr		r5, [r8, #0]
+	mov		r6, #0xFFF8
+	movt	r6, #0xFFFF
+	and		r5, r6, r5	
+	str		r4, [r8, #0]
 
 	; set to periodic mode
 	ldr		r5, [r4, #0x4]
@@ -220,13 +235,26 @@ timer_init:
 	orr		r5, r5, #2
 	str		r5, [r4, #0x4]
 
+	ldr		r5, [r8, #0x4]
+	mov		r6, #0xFFFC
+	movt	r6, #0xFFFF
+	and		r5, r6, r5
+	orr		r5, r5, #2
+	str		r5, [r8, #0x4]
+
+
 	; set period to 8M ticks, so twice per second
 	mov		r5, #0x2400
 	movt	r5, #0x007A
 	str		r5, [r4, #0x28]
 
+	; timer 1 frequency is 1000 ticks per second, move 16000 or 0x3E80
+	mov		r5, #0x3E80
+	str		r5, [r8, #0x28]
+
 	; setup to interrupt
 
+	; for NOW we are not interrupting on timer 1 period
 	ldr		r5, [r4, #0x18]
 	orr		r5, r5, #0x1
 	str		r5, [r4, #0x18]
@@ -244,6 +272,10 @@ timer_init:
 	ldr		r5, [r4, #0xC]
 	orr		r5, r5, #1
 	str		r5, [r4, #0xC]
+
+	ldr		r5, [r8, #0xC]
+	orr		r5, r5, #1
+	str		r5, [r8, #0xC]
 
 	pop		{r4-r12, lr}
 	mov		pc, lr
