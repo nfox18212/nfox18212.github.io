@@ -57,7 +57,7 @@ score:			.byte 	0x0
 seed:			.word	0x0		; will be the initial seed we generate from the timer
 createSeed:		.byte	0x1 	; this configures wether or not we increment the counter for the seed and have the timer interrupt 1000 times per second
 globalTime:		.word	0x0 	; time the game has been going since starting
-
+playerdata:		.half	0x16F	; upper byte will have the color, lower byte contains the cell id of where the player is currently
 
 	.text
 
@@ -81,6 +81,7 @@ globalTime:		.word	0x0 	; time the game has been going since starting
 	.global new_o
 	.global crash
 	.global seedp
+	.global playerdatap
 
 xpos_ptr:			.word xpos
 ypos_ptr:			.word ypos
@@ -97,6 +98,7 @@ scoreVal_ptr:		.word scoreVal
 seedp:				.word seed
 createSeedp:		.word createSeed
 globalTimep:		.word globalTime
+playerdata:			.word playerdata
 
 
 
@@ -113,10 +115,14 @@ lab7:							; This is your main routine which is called from
 	push 	{r4-r12,lr}   		; Preserve registers to adhere to the AAPCS
 	bl 		init
 	clc							; clear screen
+poll:							; temporary label
+	ldr		r4, createSeedp
+	ldrb	r5, [r4, #0]
+	cmp		r5, #0				; will be to indicate to create seed
+	beq		poll				; will wait for uart interrupt to happen and resolve
+	
 	bl		seed
 	nop
-
-
 
 	pop		{r4-r12,lr}
 	mov		pc, lr
@@ -289,6 +295,9 @@ Timer_Handler:
 	ldrb	r8, [r7, #0]
 	add		r8, r8, #1		; make the timer tick
 	str		r8, [r7, #0]
+
+	; depending on settings inputted on main menu, if the timer passed a certain value, end the game.  will implement later
+
 
 	pop		{r4-r11, lr}
 	bx  	lr     ; Return
