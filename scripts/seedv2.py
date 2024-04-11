@@ -90,7 +90,7 @@ for i in range(1000):
     seed ^= seed << 13
     seed ^= seed >> 5
     seed ^= seed << 9
-    seed &= 0xFFFFFFFF
+    seed &= 0xFFFFFFFF # force it to be 32 bits
     print(hex(seed))
 
 print(colorOrder)

@@ -45,6 +45,8 @@ scoreStr:
 scoreVal:
 	.string "   ", 0x0	; this can fit into a single register and will be where we write the score
 
+teststr:		.cstring "testing testing"
+
 pause: 			.byte 	0x0		; if 1, then game is paused
 tick:			.byte 	0x0		; if 1, then a tick has occured
 xpos:			.byte 	0x0		; represents the x position on the board
@@ -54,10 +56,13 @@ ynew:			.byte	0x0		; represents the y position cursor will move to
 nextMovement:	.byte	0x0		; character that represents the user input for what direction cursor will move next
 score:			.byte 	0x0
 
-seed:			.word	0x0		; will be the initial seed we generate from the timer
+seeddata:		.word	0x0		; will be the initial seed we generate from the timer
 createSeed:		.byte	0x1 	; this configures wether or not we increment the counter for the seed and have the timer interrupt 1000 times per second
-globalTime:		.word	0x0 	; time the game has been going since starting
+gameTime:		.word	0x0 	; time the game has been going since starting
 playerdata:		.half	0x16F	; upper byte will have the color, lower byte contains the cell id of where the player is currently
+
+	.global seeddata
+	.global	playerdata
 
 	.text
 
@@ -66,7 +71,9 @@ playerdata:		.half	0x16F	; upper byte will have the color, lower byte contains t
 	.global init
 	.global UART0_Handler
 	.global Switch_Handler
-	.global Timer_Handler			; This is needed for Lab #6
+	;.global GameTimer_Handler			; This is needed for Lab #6
+	;.global SeedTimer_Handler
+	.global Timer_Handler
 	.global simple_read_character
 	.global read_character
 	.global output_character		; This is from your Lab #4 Library
@@ -80,8 +87,7 @@ playerdata:		.half	0x16F	; upper byte will have the color, lower byte contains t
 	.global extract_cid
 	.global new_o
 	.global crash
-	.global seedp
-	.global playerdatap
+	.global	seed
 
 xpos_ptr:			.word xpos
 ypos_ptr:			.word ypos
@@ -95,11 +101,12 @@ score_ptr:			.word score
 scoreStr_ptr:		.word scoreStr
 scoreVal_ptr:		.word scoreVal
 
-seedp:				.word seed
+seeddatap:			.word seeddata
 createSeedp:		.word createSeed
-globalTimep:		.word globalTime
-playerdata:			.word playerdata
+gameTimep:			.word gameTime
+playerdatap:		.word playerdata
 
+teststrp:			.word teststr
 
 
 sw1mask:	.equ	0xEF	; bitmask to mask out for SW1, pin 4
@@ -115,10 +122,11 @@ lab7:							; This is your main routine which is called from
 	push 	{r4-r12,lr}   		; Preserve registers to adhere to the AAPCS
 	bl 		init
 	clc							; clear screen
+
 poll:							; temporary label
 	ldr		r4, createSeedp
 	ldrb	r5, [r4, #0]
-	cmp		r5, #0				; will be to indicate to create seed
+	cmp		r5, #1				; will be used to indicate to we should create the seed
 	beq		poll				; will wait for uart interrupt to happen and resolve
 	
 	bl		seed
@@ -185,8 +193,9 @@ UART0_Handler:
 	push	{r4-r11,lr}
 
 	; before interrupts are re-enabled, if this is the first interrupt, change timer using createSeedp
-	ldr		r4, createSeedp
-	cmp		r4, #0
+	ldr		r1, createSeedp
+	ldrb	r0, [r1, #0]
+	cmp		r0, #1
 	it		eq
 	bleq	change_timer
 
@@ -263,41 +272,31 @@ Switch_Handler:
 	bx		lr       	; Return
 
 
+; GameTimer_Handler:
 Timer_Handler:
 
-	; Your code for your Timer handler goes here.  It is not needed for
-	; Lab #5, but will be used in Lab #6.  It is referenced here because
-	; the interrupt enabled startup code has declared Timer_Handler.
-	; This will allow you to not have to redownload startup code for
-	; Lab #6.  Instead, you can use the same startup code as for Lab #5.
-	; Remember to preserver registers r4-r11 by pushing then popping
-	; them to & from the stack at the beginning & end of the handler.
+	; this timer is the game timer, and will tick two times per second after the game starts.  this handler will be used to control movement, ending the game, and time passed
+
 	push	{r4-r11, lr}
-	
-	ldr		r4, createSeedp
-	ldrb	r5, [r4, #0] ; which timer do we increment
 
-	cmp		r5, #0
-	it		eq
-	ldreq	r5, seedp
-	ldreq	r6, [r5, #0]
-	addeq	r6, r6, #1		; increment seed
-	streq 	r6, [r5, #0]
-
-	; increment game time
-	itttt	ne
-	ldrne	r5, globalTimep
-	ldrne	r6, [r5, #0]
-	addne	r6, r6, #1
-	strne 	r6, [r5, #0]
+	ldr		r5, gameTimep
+	ldr		r6, [r5, #0]
+	add		r6, r6, #1
+	str 	r6, [r5, #0]
 
 	ldr		r7, tickp
 	ldrb	r8, [r7, #0]
 	add		r8, r8, #1		; make the timer tick
-	str		r8, [r7, #0]
+	strb	r8, [r7, #0]
 
 	; depending on settings inputted on main menu, if the timer passed a certain value, end the game.  will implement later
 
+	; re-enable interrupt
+	mov		r4, #0x0000
+	movt	r4, #0x4003
+	ldr		r5, [r4, #0x18]
+	orr		r5, r5, #0x1
+	str		r5, [r4, #0x18]
 
 	pop		{r4-r11, lr}
 	bx  	lr     ; Return
@@ -305,32 +304,43 @@ Timer_Handler:
 change_timer:
 	push	{r4-r11, lr}
 
-	ldr		r4, createSeedp
-	ldrb	r5, [r4, #0]
-	add		r5, r5, #1
-	strb	r5, [r4, #0]
+	; This subroutine should be called once per execution.  This will disable the seed timer, and stop it from interrupting.
+	sub		r0, r0, #1
+	strb	r0, [r1, #0]
 
-	; disable timer 0
-	mov		r4, #0x0000
+	mov		r4, #0x1000
 	movt	r4, #0x4003
 	ldr		r5, [r4, #0xC]
 	mov		r6, #0xFFFE
 	movt	r6, #0xFFFF
-	and		r5, r6, r5
+	and		r5, r6, r5 ; mask out the very last bit
 	str		r5, [r4, #0xC]
 
-	; set period to 8M ticks, so twice per second
-	mov		r5, #0x2400
-	movt	r5, #0x007A
-	str		r5, [r4, #0x28]
-
-	; re-enable timer
-	ldr		r5, [r4, #0xC]
-	orr		r5, r5, #1
-	str		r5, [r4, #0xC]
 
 	pop		{r4-r11, lr}
 	mov		pc, lr
+
+
+SeedTimer_Handler:
+	push	{r4-r11, lr}
+
+	; increment seed value
+	ldr		r6, seeddatap
+	ldr		r7, [r6, #0]
+	add		r7, r7, #1
+	str		r7, [r6, #0]
+
+	; re-enable timer 1
+	mov		r4, #0x1000
+	movt	r4, #0x4003
+	ldr		r5, [r4, #0]
+	orr		r5, r5, #0x1
+	str		r5, [r4, #0]
+
+	pop		{r4-r11,lr}
+	bx		lr
+
+
 
 exit:
 	push	{r4-r11, lr}

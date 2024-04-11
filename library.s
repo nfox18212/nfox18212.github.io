@@ -206,34 +206,39 @@ timer_init:
 
 	; set timer to 32 bit mode
 	ldr		r5, [r4, #0]
-	orr		r5, r5, #1
+	mov		r6, #0xFFF8
+	movt	r6, #0xFFFF
+	and		r5, r6, r5	
+	; orr		r5, r5, #1 ; writing 1 turns it into rtc mode
 	str		r4, [r4, #0]
 
 	; set to periodic mode
 	ldr		r5, [r4, #0x4]
+	mov		r6, #0xFFFC
+	movt	r6, #0xFFFF
+	and		r5, r6, r5
 	orr		r5, r5, #2
-	str		r5, [r4, #0]
+	str		r5, [r4, #0x4]
 
 	; set period to 8M ticks, so twice per second
-	;mov	r5, #0x2400
-	;movt	r5, #0x007A
-	; initially set this to interrupt 1000 times per second, to generate the initial seed
-	mov		r5, #0x3E80
-	; when the first uart interrupt happens, we will change this
+	mov		r5, #0x2400
+	movt	r5, #0x007A
 	str		r5, [r4, #0x28]
 
 	; setup to interrupt
-	mov		r6, #0xE100
-	movt	r6, #0xE000
-	ldr		r5, [r6, #0x0]
-	mov		r7, #0
-	movt	r7, #0x8000
-	orr		r5, r6, r5
-	str		r5, [r6, #0]
-	; r4 is still 0x40030000
+
 	ldr		r5, [r4, #0x18]
 	orr		r5, r5, #0x1
 	str		r5, [r4, #0x18]
+	
+	mov		r6, #0xE100
+	movt	r6, #0xE000
+	ldr		r5, [r6, #0x0]
+	mov		r7, #0x0000
+	movt	r7, #0x0008
+	orr		r5, r7, r5
+	str		r5, [r6, #0]
+
 
 	; re-enable timer
 	ldr		r5, [r4, #0xC]
