@@ -38,25 +38,6 @@ add3 .macro P1, P2, P3, ADDRP ; debug macro
 
 board:
 	.string " ------------------ ", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string "|                  |", 0xD, 0xA
-	.string " ------------------ ", 0xD, 0xA
 
 scoreStr:
 	.string "Score = "	; intentionally not including a null terminator
@@ -73,12 +54,10 @@ ynew:			.byte	0x0		; represents the y position cursor will move to
 nextMovement:	.byte	0x0		; character that represents the user input for what direction cursor will move next
 score:			.byte 	0x0
 
-prompt:			.cstring	"prompt"
-mydata:			.byte		0x20	; This is where you can store data.
-									; The .byte assembler directive stores a byte
-									; (initialized to 0x20) at the label mydata.
-									; Halfwords & Words can be stored using the
-									; directives .half & .word
+seed:			.word	0x0		; will be the initial seed we generate from the timer
+createSeed:		.byte	0x1 	; this configures wether or not we increment the counter for the seed and have the timer interrupt 1000 times per second
+globalTime:		.word	0x0 	; time the game has been going since starting
+
 
 	.text
 
@@ -101,21 +80,23 @@ mydata:			.byte		0x20	; This is where you can store data.
 	.global extract_cid
 	.global new_o
 	.global crash
+	.global seedp
 
-ptr_to_prompt:		.word prompt
-ptr_to_mydata:		.word mydata
 xpos_ptr:			.word xpos
 ypos_ptr:			.word ypos
 xnew_ptr:			.word xnew
 ynew_ptr:			.word ynew
 board_ptr:			.word board
 move_ptr:			.word nextMovement
-tick_ptr:			.word tick
+tickp:				.word tick
 pause_ptr:			.word pause
 score_ptr:			.word score
 scoreStr_ptr:		.word scoreStr
 scoreVal_ptr:		.word scoreVal
 
+seedp:				.word seed
+createSeedp:		.word createSeed
+globalTimep:		.word globalTime
 
 
 
@@ -132,18 +113,7 @@ lab7:							; This is your main routine which is called from
 	push 	{r4-r12,lr}   		; Preserve registers to adhere to the AAPCS
 	bl 		init
 	clc							; clear screen
-	b 		crash
-	; test get_cell
-	mov		r0, #312			
-	mov		r1, #2				; specify color two
-	bl		set_color			; should set color and return the new cell in r0
-	; clear r0 to test get_color and get_cell
-	mov		r0, #312			; re-specify the cell we want to grab
-	mov		r1, #4				; grab exactly this cell
-	bl		get_cell			; see if the new cell contains the color
-	nop
-	mov		r0, #312			; again
-	bl		get_color			; should only return the color
+	bl		seed
 	nop
 
 
@@ -207,6 +177,14 @@ UART0_Handler:
 	; Remember to preserver registers r4-r11 by pushing then popping
 	; them to & from the stack at the beginning & end of the handler
 	push	{r4-r11,lr}
+
+	; before interrupts are re-enabled, if this is the first interrupt, change timer using createSeedp
+	ldr		r4, createSeedp
+	cmp		r4, #0
+	it		eq
+	bleq	change_timer
+
+	; handle all the other stuff
 
 	; re-enable interrupt
 	mov 	r1, #0xE000
@@ -288,16 +266,62 @@ Timer_Handler:
 	; Lab #6.  Instead, you can use the same startup code as for Lab #5.
 	; Remember to preserver registers r4-r11 by pushing then popping
 	; them to & from the stack at the beginning & end of the handler.
-	ldr		r0, tick_ptr
-	ldrb	r1, [r0, #0]
-	orr		r1, r1, #1			; this signifies that a tick has occured
-	strb	r1, [r0, #0]
+	push	{r4-r11, lr}
+	
+	ldr		r4, createSeedp
+	ldrb	r5, [r4, #0] ; which timer do we increment
+
+	cmp		r5, #0
+	it		eq
+	ldreq	r5, seedp
+	ldreq	r6, [r5, #0]
+	addeq	r6, r6, #1		; increment seed
+	streq 	r6, [r5, #0]
+
+	; increment game time
+	itttt	ne
+	ldrne	r5, globalTimep
+	ldrne	r6, [r5, #0]
+	addne	r6, r6, #1
+	strne 	r6, [r5, #0]
+
+	ldr		r7, tickp
+	ldrb	r8, [r7, #0]
+	add		r8, r8, #1		; make the timer tick
+	str		r8, [r7, #0]
+
+	pop		{r4-r11, lr}
 	bx  	lr     ; Return
 
+change_timer:
+	push	{r4-r11, lr}
 
+	ldr		r4, createSeedp
+	ldrb	r5, [r4, #0]
+	add		r5, r5, #1
+	strb	r5, [r4, #0]
 
+	; disable timer 0
+	mov		r4, #0x0000
+	movt	r4, #0x4003
+	ldr		r5, [r4, #0xC]
+	mov		r6, #0xFFFE
+	movt	r6, #0xFFFF
+	and		r5, r6, r5
+	str		r5, [r4, #0xC]
 
+	; set period to 8M ticks, so twice per second
+	mov		r5, #0x2400
+	movt	r5, #0x007A
+	str		r5, [r4, #0x28]
 
+	; re-enable timer
+	ldr		r5, [r4, #0xC]
+	orr		r5, r5, #1
+	str		r5, [r4, #0xC]
+
+	pop		{r4-r11, lr}
+	mov		pc, lr
 
 exit:
 	push	{r4-r11, lr}

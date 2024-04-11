@@ -101,6 +101,7 @@ rcttab:		.byte 0xB4, 0x00, 0x2D, 0x01, 0x8B, 002, 0xD2, 0x93
 	.global	output_string ; from library
 	.global dirindex
 	.global crash
+	.global alistp
 
 fotabp:		.word	fotab
 alistp:		.word 	alist
@@ -244,6 +245,7 @@ get_color:
 	; return color in r0
 	push	{r4-r12,lr}
 
+	mov		r1, #4
 	bl		get_cell
 	and		r0, r0, #0xF000		; mask for the color
 	lsr		r0, #12				; shift back to 1,2,3,4,5,6
@@ -451,7 +453,10 @@ crash:
 	ldr		r0, crashstrp	; get string addr
 	bl		output_string	; print it
 
-	mov		pc, #0x0010		; should crash program
-	; if not, this will
-	mov		r12, #0xA
-	ldr		r6, [r12, #0]  ; this WILL cause a fault
+	mov		r12, #0xFFFF
+	movt	r12, #0xFFFF
+	ldr		r0, [r12, #0] ; this should be uninitialized memory, which causes a fault
+	
+	; spin forever
+label:
+	b		label

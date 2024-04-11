@@ -215,8 +215,11 @@ timer_init:
 	str		r5, [r4, #0]
 
 	; set period to 8M ticks, so twice per second
-	mov		r5, #0x2400
-	movt	r5, #0x007A
+	;mov	r5, #0x2400
+	;movt	r5, #0x007A
+	; initially set this to interrupt 1000 times per second, to generate the initial seed
+	mov		r5, #0x3E80
+	; when the first uart interrupt happens, we will change this
 	str		r5, [r4, #0x28]
 
 	; setup to interrupt
