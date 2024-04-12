@@ -4,11 +4,13 @@ main_routine="both"
 move_player="nate"
 end_game="nate"
 pausing="nate"
+collision_detection="nate"
 
 [datastructures.s]
 display_matrix="sebastien"
 row_reflection="sebastien"
 column_reflection="sebastien"
+fix_alist="nate" # So there's only 51 lines in the alist, when there should be 54.  Where did the last 3 lines go?
 
 [rng.s]
 create_seed="nate"

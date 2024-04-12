@@ -1,16 +1,16 @@
 
     .data
 
-colorlist:
-			.byte 0x1,0x1,0x1,0x1,0x1,0x1,0x1,0x1,0x1
+colorlist:	.byte 0x1,0x1,0x1,0x1,0x1,0x1,0x1,0x1,0x1
 			.byte 0x2,0x2,0x2,0x2,0x2,0x2,0x2,0x2,0x2
 			.byte 0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3
 			.byte 0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4,0x4
 			.byte 0x5,0x5,0x5,0x5,0x5,0x5,0x5,0x5,0x5
-			.byte 0x6,0x6,0x6,0x6,0x6,0x6,0x6,0x6,0x6
+			.byte 0x6,0x6,0x6,0x6,0x6,0x6,0x6,0x6,0x6, 0x0 ; null terminated
 
 	.global seeddata
-
+	.global	colorlist
+	.global cells
     .text
 
 colorlistp:    .word    colorlist
@@ -21,6 +21,7 @@ colorlistp:    .word    colorlist
 
 
 seeddatap:	.word 	seeddata
+cellp:		.word 	cells
 
 seed:
     push    {r4-r12, lr}
@@ -59,7 +60,13 @@ rngloop:
 	
 	sub 	r10, r10, #1	; decrement number of iterations
 	cmp		r10, #0
-	bne		rngloop			; if we've hit zero, return
+	bne		rngloop			; if we've hit zero, fill the alist with the colors
+
+	mov		r2, r6			; move colorlist addr to r0 to easily iterate through it
+	ldr		r3, cellp
+	push	{r4-r12,lr} 	; not *exactly* ahdering to the standard, but sort of
+	bl		fill_alist
+	; popped when returned
 
     pop     {r4-r12, lr}
     mov     pc, lr
@@ -71,7 +78,17 @@ reduce: ; can't be a macro bc of loop
     eorge  	r0, r0, #0x33
     lsrge  	r0, #1
     bge    	reduce
-    blt    	goback
+	movlt	pc, lr
 
-goback:     ; this exists only to get around the limitation that you can't modify the pc in a it block
-    mov     pc, lr
+
+fill_alist:
+	; actually iterates through the color_list to put the colors into it
+	ldrb	r1, [r2], #1	; post-indexed by 1 byte to iterate through the color list for each color
+	ldrh	r0, [r2], #2	; post indexed by 2 to iterate through cell list
+	mov		r4, #0xFFFF		; stop byte
+	cmp		r0, r4		; make sure its not the end of the cell list
+	ite	ne
+	blne	set_color		; set the color from the color list
+	moveq	pc, lr			; if we hit the 0xFFFF byte, return
+	bne		fill_alist		; loop - yes this looks weird but this can execute due to the moveq not executing because of the it block
+	

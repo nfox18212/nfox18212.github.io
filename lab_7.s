@@ -31,28 +31,14 @@ add3 .macro P1, P2, P3, ADDRP ; debug macro
 
 	.data
 
-	.global prompt
-	.global mydata
+scoreStr:		.string "Score = "	; intentionally not including a null terminator
 
-
-
-board:
-	.string " ------------------ ", 0xD, 0xA
-
-scoreStr:
-	.string "Score = "	; intentionally not including a null terminator
-
-scoreVal:
-	.string "   ", 0x0	; this can fit into a single register and will be where we write the score
+scoreVal: 		.string "   ", 0x0	
 
 teststr:		.cstring "testing testing"
 
 pause: 			.byte 	0x0		; if 1, then game is paused
 tick:			.byte 	0x0		; if 1, then a tick has occured
-xpos:			.byte 	0x0		; represents the x position on the board
-ypos:			.byte	0x0 	; represents the y position on the board
-xnew:			.byte	0x0		; represents the x position cursor will move to
-ynew:			.byte	0x0		; represents the y position cursor will move to
 nextMovement:	.byte	0x0		; character that represents the user input for what direction cursor will move next
 score:			.byte 	0x0
 
@@ -71,15 +57,12 @@ playerdata:		.half	0x16F	; upper byte will have the color, lower byte contains t
 	.global init
 	.global UART0_Handler
 	.global Switch_Handler
-	;.global GameTimer_Handler			; This is needed for Lab #6
-	;.global SeedTimer_Handler
 	.global Timer_Handler
 	.global simple_read_character
 	.global read_character
 	.global output_character		; This is from your Lab #4 Library
 	.global read_string				; This is from your Lab #4 Library
 	.global output_string			; This is from your Lab #4 Library
-	.global uart_init				; This is from your Lab #4 Library
 	.global lab7
 	.global set_color
 	.global get_color
@@ -89,11 +72,7 @@ playerdata:		.half	0x16F	; upper byte will have the color, lower byte contains t
 	.global crash
 	.global	seed
 
-xpos_ptr:			.word xpos
-ypos_ptr:			.word ypos
-xnew_ptr:			.word xnew
-ynew_ptr:			.word ynew
-board_ptr:			.word board
+
 move_ptr:			.word nextMovement
 tickp:				.word tick
 pause_ptr:			.word pause
@@ -147,40 +126,8 @@ detect_collision:
 
 	push	{r4-r12, lr}
 
+	; need to make new collision detection routine
 
-	ldr		r5, board_ptr
-	ldrb	r4, [r5, r0]	; r2 contains the offset from what we want
-	; passed in as an argument
-
-	; look for a *
-	cmp		r4, #star
-	ite		eq
-	moveq	r2, #1			; if there's a * it means there's a collision.  return 1 in r2
-	movne	r2, #0			; if there isn't, then no collision has occured.  return 0 in r2
-
-	pop		{r4-r12, lr}
-	mov		pc, lr
-
-change_ypos:
-	; grabs current y position and adds whatever is in r0 to it.  returns ypos in r1
-	push	{r4-r12, lr}
-
-	ldr		r4, ypos_ptr
-	ldrb	r1, [r4, #0]	; grab current y position
-	add		r1, r1, r0		; the modifier is passed in r0, so add it
-	strb	r1, [r4, #0]	; store it again
-
-	pop		{r4-r12, lr}
-	mov		pc, lr
-
-change_xpos:
-	; grabs current y position and adds whatever is in r0 to it. returns xpos in r0
-	push	{r4-r12, lr}
-
-	ldr		r4, xpos_ptr	; literally just look at the change_ypos subroutine
-	ldrb	r1, [r4, #0]
-	add		r1, r1, r0
-	mov		r1, r0
 
 	pop		{r4-r12, lr}
 	mov		pc, lr
@@ -310,7 +257,7 @@ change_timer:
 	sub		r0, r0, #1
 	strb	r0, [r1, #0]
 
-	; disable the timer
+	; disable timer 1
 	mov		r4, #0x1000
 	movt	r4, #0x4003
 	ldr		r5, [r4, #0xC]
@@ -327,27 +274,6 @@ change_timer:
 
 	pop		{r4-r11, lr}
 	mov		pc, lr
-
-
-SeedTimer_Handler:
-	push	{r4-r11, lr}
-
-	; increment seed value
-	ldr		r6, seeddatap
-	ldr		r7, [r6, #0]
-	add		r7, r7, #1
-	str		r7, [r6, #0]
-
-	; re-enable timer 1
-	mov		r4, #0x1000
-	movt	r4, #0x4003
-	ldr		r5, [r4, #0]
-	orr		r5, r5, #0x1
-	str		r5, [r4, #0]
-
-	pop		{r4-r11,lr}
-	bx		lr
-
 
 
 exit:
