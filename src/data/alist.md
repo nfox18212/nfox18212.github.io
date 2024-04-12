@@ -23,3 +23,29 @@ If the current cell is in the format XX0 or XX1, then going East will always res
 | N/A     | N/A     | N/A     | -001    | W   |
 
 All other movements will need to be indexed using the adjacency list, but this removes the need to specify 24 cells in the .data section of the assembly program.  Less manual work is better.  The mapping of what cell is adjacent to what will be [in this google sheet.](https://docs.google.com/spreadsheets/d/1lIbhq9RJiK44gera0EY-gOZbGEYBQ-LJChw7v7JewIk/edit?usp=sharing)
+
+
+## Color
+
+The color is also stored in the alist, but only the indexing cell.  Meaning if you look through the adjacency table for cell 111, the color of cell 111 will be stored at that offset.  As the table is stored in hex, it would look like this if cell 111 was purple:
+
+```arm
+
+.half   0x6F06
+```
+
+It is stored this way in memory to account for the little endian architecture.  The largest 3 bits in this index stores the color, and the rest is the cell ID.  
+
+## Subroutines
+
+The following subroutines are availible for the adjacency list: (as of 2024-04-12)
+
+**get_color**: Given an input cell ID in r0, returns the color of that cell in r0.
+
+**set_color**:  Given an input CID in r0 and a color in r1, sets the color of that cell to the color givenn in r1.  Returns the new cell value in r0.
+
+**extract_cid**:  Given a CID, returns the face number in r0, the row number in r1, nad the column number in r2.
+
+**get_cell**:  Given a CID in r0 and a direction in r1, return the given cell from the alist in memory in r0 and the offset it took in r1.  You **must** provide a valid direction (0-4) in r1 or else the subroutine will crash.  Directions: 0 - East, 1 - South, 2 - North, 3 - West, 4 - No movement.  If given 4 in r1, will return the given cell from memory which includes color data.  
+
+**dirindex**:  Given an input ascii character representing a cardinal direction or a number 0-3 that represents a cardinal direction, returns in r0 the character/integer version.
