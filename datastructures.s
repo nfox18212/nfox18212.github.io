@@ -321,6 +321,9 @@ get_cell:
 	
 	ldr		r5, alistp 		; grab ptr to alist
 	ldrh	r0, [r5, r6]	; grab cell contents using the calculated offset
+	; if direction was not 4, filter out first nibble.  It contains direction data which is irrelevant. 
+	it		ne
+	andne	r0, r0, #0x0FFF
 	mov		r1, r6			; return the offset in r1 for set_color
 
 
