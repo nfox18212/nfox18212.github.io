@@ -310,6 +310,7 @@ change_timer:
 	sub		r0, r0, #1
 	strb	r0, [r1, #0]
 
+	; disable the timer
 	mov		r4, #0x1000
 	movt	r4, #0x4003
 	ldr		r5, [r4, #0xC]
@@ -318,6 +319,11 @@ change_timer:
 	and		r5, r6, r5 ; mask out the very last bit
 	str		r5, [r4, #0xC]
 
+	; nab the timer value of TAV - offset #0x50
+	ldr		r5, [r4, #0x50]
+	; nab the seeddata pointer
+	ldr		r6, seeddatap
+	str		r5, [r6, #0]	; store the timer value in the seeddata
 
 	pop		{r4-r11, lr}
 	mov		pc, lr
