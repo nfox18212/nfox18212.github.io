@@ -249,7 +249,10 @@ timer_init:
 	str		r5, [r4, #0x28]
 
 	; timer 1 frequency is 1000 ticks per second, move 16000 or 0x3E80
-	mov		r5, #0x3E80
+	; if we want it to interrupt, we should have the frequency be very big.  if we want to just read the TAV register with the free-running timer-value, we should have it be very big
+	; mov		r5, #0x3E80
+	mov		r5, #0xFFEE
+	movt	r5, #0xFFFF
 	str		r5, [r8, #0x28]
 
 	; setup to interrupt
