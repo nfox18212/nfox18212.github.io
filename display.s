@@ -1,4 +1,6 @@
 ; COLOR STRINGS
+
+    .data
 ; background (squares)
 redbg:      .string 27,"[48;5;31H"
 greenbg:    .string 27,"[48;5;32H"
@@ -27,10 +29,12 @@ cyanfg:     .string 27,"[38;5;36H"
 ;       100 = BLUE
 ;       101 = MAGENTA
 ;       110 = CYAN
-disp_row_00:    .word
+disp_row_00:    .word    ; .word what?  as is, this won't assemble
 disp_row_01:    .word
 disp_row_10:    .word
 
+    .text
+    .global     display_init
 ; DISPLAY MATRIX
 ; the current face will be passed in by r0
 ; it will output face and orientation in r0 and r1 respectively
