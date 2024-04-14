@@ -45,20 +45,16 @@ score:			.byte 	0x0
 seeddata:		.word	0x0		; will be the initial seed we generate from the timer
 createSeed:		.byte	0x1 	; this configures wether or not we increment the counter for the seed and have the timer interrupt 1000 times per second
 gameTime:		.word	0x0 	; time the game has been going since starting
-playerdata:		.half	0x16F	; upper byte will have the color, lower byte contains the cell id of where the player is currently
-
+playerdata:		.word	0x0006006F	; from largest byte to smallest: byte 0: orientation, byte 1: player color, byte 2 and byte 3: current cell.  starting cell is 111 and color is blue
 	.global seeddata
 	.global	playerdata
 
 	.text
 
-	.global uart_interrupt_init
-	.global gpio_interrupt_init
 	.global init
 	.global UART0_Handler
 	.global Switch_Handler
 	.global Timer_Handler
-	.global simple_read_character
 	.global read_character
 	.global output_character		; This is from your Lab #4 Library
 	.global read_string				; This is from your Lab #4 Library
@@ -67,13 +63,15 @@ playerdata:		.half	0x16F	; upper byte will have the color, lower byte contains t
 	.global set_color
 	.global get_color
 	.global get_cell
+	.global dirindex
+	.global rcd
 	.global extract_cid
 	.global new_o
 	.global crash
 	.global	seed
 
 
-move_ptr:			.word nextMovement
+movp:				.word nextMovement
 tickp:				.word tick
 pause_ptr:			.word pause
 score_ptr:			.word score
@@ -94,10 +92,9 @@ uartwrite:	.equ	0x20
 clear:		.equ	0xC		; form feed, new page
 newline:	.equ	0xA
 return:		.equ	0xD		; carriage return
-star:		.equ	0x2A	; * - the asterisk
+star:		.equ	0x2A	; asterisk - *
 
-lab7:							; This is your main routine which is called from
-; your C wrapper.
+lab7:							; This is your main routine which is called from your C wrapper.
 	push 	{r4-r12,lr}   		; Preserve registers to adhere to the AAPCS
 	bl 		init
 	clc							; clear screen
@@ -109,7 +106,20 @@ poll:							; temporary label
 	beq		poll				; will wait for uart interrupt to happen and resolve
 	
 	bl		seed
+	
+	; test detect_collision
+	mov		r0, #0x70	
+	mov		r1, #0x6			; make cell 112 blue
+	bl		set_color
+
+	; the player is blue by default
+	bl		detect_collision
 	nop
+
+
+
+
+
 
 	pop		{r4-r12,lr}
 	mov		pc, lr
@@ -125,12 +135,99 @@ poll:							; temporary label
 detect_collision:
 
 	push	{r4-r12, lr}
-
+	; r0 - new cell
+	; r1 - player's color
+	; r2 - returns 1 or 0 
 	; need to make new collision detection routine
 
+	mov		r5, r1		; copy r1 to back it up
+
+	bl		get_color
+
+
+	cmp		r0, r5		; check to see if the colors are the same
+	ite		eq
+	moveq	r2, #1 		; if they are return 1, collision detected
+	movne	r2, #0		; if not, return 0 - no collision
 
 	pop		{r4-r12, lr}
 	mov		pc, lr
+
+
+
+move:
+	; does not take input, does not need it
+	push	{r4-r12, lr}
+
+	ldr		r4, playerdatap
+	ldr		r5, [r4, #0] 	; get playerdata
+
+	mov		r7, #0x0FFF		; the bit filter for grabbing position
+	and		r6, r5, r7		; get just position
+
+	mov		r7, #0x0000		; bit filer for orientation
+	movt	r7, #0xFF00		
+	and		r7, r7, r5		; get the current orientation
+
+	ldr		r12, movp
+	ldrb	r0, [r12, #0]	; get the next movement - it is absolute since next_movement only stores absolute movement
+
+	; movement is stored as a character, convert to number
+	bl		dirindex
+	; now the movement is 0,1,2,3
+	mov		r1, r0			; move direction to r1	mov		r1, r0			; put new cell into r1
+	mov		r0, r6			; put old cell into r0 for get_cell subroutine
+	push	{r1}			; backup r1
+	mov		r0, r6			; r6 => r0 for get_cell subroutine
+	
+	bl		get_cell
+	pop		{r1}			; restore r1 being direction
+	; r0 has the new cell and r1 is direction
+
+	; now we need to determine the new orientation
+	bl		new_o
+	; now r2 contains the new orientation
+
+	push	{r0-r2}			; preserve new cell, direction, and orientation in that order
+
+		mov		r1, r0			; put new cell into r1
+	mov		r0, r6			; put old cell into r0
+	; detect for collision
+	; detect_collision will return 0 or 1 in r2.  if 1, there's a collision so reject movement
+	bl		detect_collision
+
+	; see if there's a collision
+	cmp		r2, #1
+	; balance the stack
+	pop		{r0-r2}
+	beq		move_exit ; if there is, exit - don't allow the move
+
+	; if we are here, the movement is valid
+	; since the movement is valid, store it in playerdata
+
+	; r0 has new cell, r1 has direction of movement, r2 has orientation, r5 has playerdata
+
+	; clear out old cell id
+	lsr		r5, #12
+	lsl		r5, #12
+
+	orr		r5, r5, r0		; set the new cell id
+
+	; get rid of old orientation
+	mov		r3, #0xFFFF
+	movt	r3, #0x00FF
+	and		r5, r3, r5	
+
+	lsl		r2, r2, #24		; shift to easily be able to set new orientation
+	orr		r5, r2, r5		; set the bits to write playerdata
+	
+	str		r5, [r4, #0] 	; store the new playerdata
+
+move_exit:
+	; return from move subroutine
+	pop		{r4-r12, lr}
+	mov		pc, lr
+
 
 UART0_Handler:
 
@@ -180,9 +277,17 @@ UART0_Handler:
 	b		exit_uart_handler
 
 cont_uart:
-
+	; change the relative direction dir to absolute - we need orientation form playerdata
+	ldr		r6, playerdatap
+	ldr		r7, [r6, #0]
+	mov		r10, #0
+	movt	r10, #0xFF00	; filter for orientation
+	and		r1, r7, r10		; r1 contains the orientation
+	
+	bl		rcd				; convert the relative wasd to NSEW
 	; now we store r0 into nextMovement
-	ldr		r4, move_ptr
+	ldr		r4, movp
+
 	strb	r0, [r4, #0]
 
 	; we're done so exit

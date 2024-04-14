@@ -10,11 +10,9 @@ collision_detection="nate"
 display_matrix="sebastien"
 row_reflection="sebastien"
 column_reflection="sebastien"
-fix_alist="nate" # So there's only 51 lines in the alist, when there should be 54.  Where did the last 3 lines go?
 
 [rng.s]
-create_seed="nate"
-fill_board="nate"
+status="done?"
 
 [display.s]
 main_menu="sebastien"

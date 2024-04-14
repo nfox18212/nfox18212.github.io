@@ -29,9 +29,9 @@ cyanfg:     .string 27,"[38;5;36H"
 ;       100 = BLUE
 ;       101 = MAGENTA
 ;       110 = CYAN
-disp_row_00:    .word    ; .word what?  as is, this won't assemble
-disp_row_01:    .word
-disp_row_10:    .word
+disp_row_00:    .word   0x0 ; .word what?  as is, this won't assemble
+disp_row_01:    .word   0x0
+disp_row_10:    .word   0x0
 
     .text
     .global     display_init
@@ -45,7 +45,7 @@ display_init:
 col_reflection:
 
 ; transpose subroutine
-transpose_reflection:
+transpose:
 
 ; rotation subroutine
 rotate_full:
