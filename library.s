@@ -81,6 +81,7 @@ ptr_to_restart			.word restartprompt
 	.global div_and_mod
 	.global uart_interrupt_init
 	.global gpio_interrupt_init
+	.global goback
 
 sw1mask:	.equ	0xEF	; bitmask to mask out for SW1, pin 4
 sw1write:	.equ 	0x10	; bitmasks to write a 1 for SW1, pin 4
@@ -244,8 +245,11 @@ timer_init:
 
 
 	; set period to 8M ticks, so twice per second
-	mov		r5, #0x2400
-	movt	r5, #0x007A
+	; mov		r5, #0x2400
+	; movt	r5, #0x007A
+	mov		r5, #0x8000
+	movt	r5, #0x7FFF
+	; make period to interrupt stupidly big
 	str		r5, [r4, #0x28]
 
 	; timer 1 frequency is 1000 ticks per second, move 16000 or 0x3E80
@@ -748,5 +752,11 @@ gpio_interrupt_init:
 
 	pop		{r4-r11,lr}
 	mov		pc, lr
+
+goback:	
+	; we are here from C, so r0 contains the address
+	sub		r3, r0, #4	; go back one instruction
+	pop		{r0} 		; restore original r0
+	mov		pc, r3
 
 	.end

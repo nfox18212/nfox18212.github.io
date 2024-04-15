@@ -35,7 +35,7 @@ scoreStr:		.string "Score = "	; intentionally not including a null terminator
 
 scoreVal: 		.string "   ", 0x0	
 
-teststr:		.cstring "testing testing"
+teststr:		.string "testing testing", 0xA, 0xD, 0x0
 
 pause: 			.byte 	0x0		; if 1, then game is paused
 tick:			.byte 	0x0		; if 1, then a tick has occured
@@ -98,6 +98,9 @@ lab7:							; This is your main routine which is called from your C wrapper.
 	push 	{r4-r12,lr}   		; Preserve registers to adhere to the AAPCS
 	bl 		init
 	clc							; clear screen
+	ldr		r0, teststrp
+	bl		output_string
+
 
 poll:							; temporary label
 	ldr		r4, createSeedp

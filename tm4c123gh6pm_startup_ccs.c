@@ -44,6 +44,9 @@ extern void _c_int00(void);
 extern void UART0_Handler(void);
 extern void Switch_Handler(void);
 extern void Timer_Handler(void);
+extern void goback(uint32_t addr); // debug function to jump back to assembly and we can go to a faulted instruction
+extern void output_string(char* str);  // print to uart
+void mmsrprint(uint32_t mmsr);
 
 //*****************************************************************************
 //
@@ -69,7 +72,7 @@ extern uint32_t __STACK_TOP;
 #pragma DATA_SECTION(g_pfnVectors, ".intvecs")
 void (* const g_pfnVectors[])(void) =
 {
-    (void (*)(void))((uint32_t)&__STACK_TOP),
+    (void (*)(void)) ((uint32_t)&__STACK_TOP),
                                             // The initial stack pointer
     ResetISR,                               // The reset handler
     NmiSR,                                  // The NMI handler
@@ -276,11 +279,90 @@ NmiSR(void)
 static void
 FaultISR(void)
 {
+    int cont = 0;
     //
-    // Enter an infinite loop.
+    // Allow me to copy into an editor what the faulted instruction is, and copy r3 to preserve it.  goback goes to one before the faulted instruction.
     //
-    while(1)
+    while(!cont)
     {
+        // spin
+    }
+    
+    volatile void* mmar = (volatile void *) 0xE000ED34; // address of the MemManage Address Register - contains address of faulted instruction
+    volatile void* mmsr = (volatile void *) 0xE000ED28; // address of the MemManage Fault Status Register
+    /* 
+        If we are in this function we have encountered a fault.  I'm going to assume that this fault is because of a bad memory load/store - it usually is.
+        That type of fault is a memory management fault and is stored in the address above.  The contents, which will be stored as a uint32_t.  We're gonna read it and find the faulted address, and then go to it.  
+     */
+    // preserve r0 by pushing it to the stack
+    asm(
+
+            "preserve_r0:\n str sp!, [r0, #0]"
+
+            );
+
+    uint32_t mmsr_contents = (*(uint32_t *) (mmsr)) & (uint32_t) 0xFF;
+    
+    mmsrprint(mmsr_contents);
+
+    // now find the address
+    uint32_t mmar_contents = *(uint32_t *) (mmar); // read address to get the faulted address
+
+
+    goback(mmar_contents); // go back to assembly
+}
+
+void mmsrprint(uint32_t mmsr_contents){
+     // now we print to uart what the type of error is
+    uint32_t MMARVALID = mmsr_contents & 0x80;
+    uint32_t MLSPERR = mmsr_contents & 0x20;
+    uint32_t MSTKERR = mmsr_contents & 0x10;
+    uint32_t MUNSTKERR = mmsr_contents & 0x08;
+    uint32_t DACCVIOL = mmsr_contents & 0x02;
+    uint32_t IACCVIOL = mmsr_contents & 0x01;
+
+    char* msg;
+    if (MMARVALID){
+        msg = "MMAR Contains valid fault address\n";
+    } else {
+        msg = "value in MMAR is not a valid fault addres\n";
+    }
+
+    output_string(msg); // goes to assembly
+
+    if (MLSPERR){
+        msg = "a MemManage fault occurred during floating-point lazy state preservation.\n";
+    } else {
+        msg = "no MemManage fault occurred during floating-point lazy state preservation\n";
+    }
+
+    output_string(msg);
+
+    if (MSTKERR) {
+        msg = "stacking for an exception entry has caused one or more access violations. When this bit is 1, the SP is still adjusted but the values in the context area on the stack might be incorrect. The processor has not written a fault address to the MMAR.\n";
+    } else {
+        msg = "no stacking fault.";
+    } 
+
+    output_string(msg);
+
+    if (MUNSTKERR) {
+        msg = "unstack for an exception return has caused one or more access violations. This fault is chained to the handler. This means that when this bit is 1, the original return stack is still present. The processor has not adjusted the SP from the failing return, and has not performed a new save. The processor has not written a fault address to the MMAR.\n";
+    } else {
+        msg = "no unstacking fault.\n";
+    }
+
+    output_string(msg);
+
+    if (DACCVIOL) {
+        msg = "The processor attempted a load or store at a location that does not permit the operation. When this bit is 1, the PC value stacked for the exception return points to the faulting instruction. The processor has loaded the MMAR with the address of the attempted access.\n";
+    } else {
+        msg = "no data access violation fault.\n";
+    }
+
+    if (IACCVIOL) {
+    } else {
+        msg = "no instruction access violation fault.\n";
     }
 }
 
