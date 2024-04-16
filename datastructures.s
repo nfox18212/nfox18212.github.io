@@ -9,7 +9,9 @@ clc .macro
 
 mats: 		.space 	128 	; matrix storage, size will need to change - sebastien this is yours to implement
 
-crashstr:	.cstring "In get_cell a direction greater than 4 was specified, crashing program\n"
+crashstr:	.string "In get_cell a direction greater than 4 was specified, crashing program", 0xD, 0xA, 0x0
+
+rcdstr:		.string "Invalid orientation given in rcd, crashing", 0xD, 0xA, 0x0
 
 ; yes, this is kind of unreadable.  just read the docs, specifically about adjacency list
 fotab:		.byte 0x60, 0x01, 0x48, 0x24, 0x00, 0x5C
@@ -23,7 +25,6 @@ fotab:		.byte 0x60, 0x01, 0x48, 0x24, 0x00, 0x5C
 
 ; format described in docs
 ; simple description: first 4 bits are color, next 12 are the cell index.  0,1,2,3 are cardinal direction for East, South, North, West and other cell indexes.
-; TODO:  There are only 50 entries in this alist.  Figure out what is missing
 alist:		
 			.byte 0x64, 0x00, 0x65, 0x00, 0x6E, 0x10, 0xA4, 0x21, 0xF6, 0x31
 			.byte 0x65, 0x00, 0x66, 0x00, 0x6F, 0x10, 0xA5, 0x21, 0x64, 0x30
@@ -86,9 +87,15 @@ cells:		.byte 0x64, 0x00, 0x65, 0x00, 0x66, 0x00, 0x6E, 0x00, 0x6F, 0x00, 0x70, 
 ; up: bits 6,7 - down: bits 4,5 - left: bits 2,3 right: 0,1
 ; East: 00,  South: 01, North: 10, West: 11
 ; table that converts relative movement (up, down, left, right) into cardinal directions
-rcttab:		.byte 0xB4, 0x00, 0x2D, 0x01, 0x8B, 002, 0xD2, 0x93, 0x00 ; null terminator byte
+rcdtab:		.byte 0xB4, 0x00, 0x2D, 0x01, 0x8B, 0x02, 0xD2, 0x93, 0x00 ; null terminator byte
+
+rcdtab2:	.string 0x0, "nsew"
+			.string 0x1, "enws"
+			.string 0x2, "senw"
+			.string 0x3, "wsen"
 
 globals: 	.byte 0x0 			; don't use this, its only for vscode folding and searching for it
+
 	.global cells
 
 	.text
@@ -106,8 +113,10 @@ globals: 	.byte 0x0 			; don't use this, its only for vscode folding and searchi
 
 fotabp:		.word	fotab
 alistp:		.word 	alist
-rcdtabp:	.word 	rcttab
+rcdtabp:	.word 	rcdtab
+rcd2tabp:	.word 	rcdtab2
 crashstrp:	.word 	crashstr
+rcdstrp:	.word 	rcdstr
 
 new_o:
 	; r0: current cell
@@ -165,62 +174,65 @@ rcd:
 	; r1: movement, relative directon wasd
 	; converts wasd to NSEW, returns in r0 and clears r1
 	push	{r4-r12,lr}
-	
-	
 
-	; offset is based on passed in orientation
-	cmp 	r0, #0x0
+	; determine which row to use
+	cmp 	r0, #0
 	it		eq
-	moveq	r4, #1
+	moveq	r4, #0
 	beq		rcdAfter_if
 
-	cmp 	r0, #0x1
+	cmp 	r0, #1
 	it		eq
-	moveq	r4, #3
+	moveq	r4, #5
 	beq		rcdAfter_if
 
-	cmp 	r0, #0x2
+	cmp 	r0, #2
 	it		eq
-	moveq	r4, #0x5
+	moveq	r4, #10
 	beq		rcdAfter_if
 
-	cmp 	r0, #0x3
+	cmp 	r0, #3
 	it		eq
-	moveq 	r4, #0x7
+	moveq 	r4, #15
 	beq		rcdAfter_if
 
+	; if its an invalid orientation, continue
+	ldr		r0, rcdstrp
+	bl		output_string
+	b		crash
+		; now mask based on direction
 rcdAfter_if:
 
-	ldr		r5, rcdtabp
-	ldrb	r6, [r5, r4]	; byte offset is in r4
-	; now mask based on direction
+	ldr		r5, rcd2tabp
+	; use new rcdtab because its simpler
+
+	; now we only need to load one byte. calculate the offset
 	cmp		r1, #0x65		; w - up
-	itt		eq
-	andeq	r0, r0, #0xC0
-	lsreq	r0, r0, #6		; shift right 6 bits to strip nullspace
+	it		eq
+	addeq	r4, r4, #1		
 	beq		rcdAfter_if2
 
 	cmp		r1, #0x73		; a - left
-	itt		eq
-	andeq	r0, r0, #0x30
-	lsreq	r0, r0, #4		; nullspace is 4 this time
-	beq		rcdAfter_if2
-
-	cmp		r1, #0x6E
-	itt		eq
-	andeq	r0, r0, #0x0C
-	lsreq	r0, r0, #2		; only 2, next won't need a shift
-	beq		rcdAfter_if2
-
-	cmp		r1, #0x77
 	it		eq
-	andeq	r0, r0, #0x3	; no shift needed
-	; why branch lol
+	addeq	r4, r4, #2
+	beq		rcdAfter_if2
+
+	cmp		r1, #0x6E		; s - down
+	it		eq
+	addeq	r4, r4, #2
+	beq		rcdAfter_if2
+
+	cmp		r1, #0x77		; d - right
+	it		eq
+	addeq	r4, r4, #3
+	beq		rcdAfter_if2
+
+	b 		crash
 
 rcdAfter_if2:
-
+	; we have the new offset, load the associated cardinal direction
+	ldr		r0, [r5, r4] 	; r4 is the offset
 	; not much to do after this point
-	mov		r1, #0			; clear r1
 	mov		pc, lr 			; return
 
 set_color:

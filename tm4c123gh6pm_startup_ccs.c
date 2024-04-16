@@ -23,7 +23,6 @@
 //*****************************************************************************
 
 #include "debug.h"
-#include <stdint.h>
 
 //*****************************************************************************
 //
@@ -60,6 +59,9 @@ extern uint32_t __STACK_TOP;
 //*****************************************************************************
 // To be added by user
 
+//*****************************************************************************
+// global variable for debug function
+static bool cangoback = false;
 //*****************************************************************************
 //
 // The vector table.  Note that the proper constructs must be placed on this to
@@ -269,8 +271,7 @@ static void NmiSR(void) {
 //
 //*****************************************************************************
 static void FaultISR(void) {
-  int cont = 0; // should only be modified by debugger
-  int cangoback = 0;
+  int cont = 0;  // should only be modified by debugger
   /*
    * Allow me to copy into an editor what the faulted instruction is, and copy
    * r3 to preserve it.  goback goes to one before the faulted instruction.
@@ -279,28 +280,23 @@ static void FaultISR(void) {
     // spin
   }
 
-  uint32_t badaddr; // technically this should be a pointer, but it doesn't matter.  its not going to be used anywhere except in assembly, so type doesn't really matter
+  uint32_t badaddr;                                   // technically this should be a pointer, but it doesn't matter.  its not going to be used anywhere except in assembly, so type doesn't really matter
   volatile void *cfsr = (volatile void *)0xE000ED28;  // address of the configurable fault status register, can get further information from bitmasking this
 
   // preserve r0 by pushing it to the stack
   asm(
+      "preserve_r0:\n str sp!, [r0, #0]");
 
-      "preserve_r0:\r\n str sp!, [r0, #0]"
-
-  );
-
-  uint32_t mmsr = (*(uint32_t *)cfsr) & (uint32_t)0xFF;    // memfault status register is only 1 byte in size
-  uint32_t bfsr = (*(uint32_t *)cfsr) & (uint32_t)0xFF00;  // bus fault status reg also one byte in size, at 0xE000ED29, shift bitmask
+  uint32_t mmsr = (*(uint32_t *)cfsr) & (uint32_t)0xFF;        // memfault status register is only 1 byte in size
+  uint32_t bfsr = (*(uint32_t *)cfsr) & (uint32_t)0xFF00;      // bus fault status reg also one byte in size, at 0xE000ED29, shift bitmask
   uint32_t ufsr = (*(uint32_t *)cfsr) & (uint32_t)0xFFFF0000;  // usage fault status reg is upper halfword, mask for just that
 
   if (mmsr != 0) {
     badaddr = handle_memfualt(mmsr);
-    cangoback = 1;
   }
 
   if (bfsr != 0) {
     badaddr = handle_busfault(mmsr);
-    cangoback = 1;
   }
 
   if (ufsr != 0) {
@@ -309,8 +305,14 @@ static void FaultISR(void) {
   }
 
   if (cangoback) {
-
     goback(badaddr);  // goes back to assembly passing in the bad address
+  } 
+
+  // if we get here, we can't go back.  
+  char* finalmsg = "No valid address found, cannot go back.\r\n";
+  output_string(finalmsg);
+  for(;;){
+    // spin forever
   }
 }
 
@@ -336,6 +338,7 @@ void mmsrprint(uint32_t mmsr) {
   // there's no == because it'll do this if MMARVALID is nonzero, and MMARVALID will only ever be zero or nonzero.
   if (MMARVALID) {
     msg = "MMAR Contains valid fault address\r\n";
+    cangoback = true;
   } else {
     msg = "value in MMAR is not a valid fault addres\r\n";
   }
@@ -343,22 +346,17 @@ void mmsrprint(uint32_t mmsr) {
   output_string(msg);  // goes to assembly
 
   if (MLSPERR) {
-    msg = "a MemManage fault occurred during floating-point lazy state "
-          "preservation.\r\n";
+    msg = "a MemManage fault occurred during floating-point lazy state preservation.\r\n";
   } else {
-    msg = "no MemManage fault occurred during floating-point lazy state "
-          "preservation\r\n";
+    msg = "no MemManage fault occurred during floating-point lazy state preservation\r\n";
   }
 
   output_string(msg);
 
   if (MSTKERR) {
-    msg = "stacking for an exception entry has caused one or more access "
-          "violations. When this bit is 1, the SP is still adjusted but the "
-          "values in the context area on the stack might be incorrect. The "
-          "processor has not written a fault address to the MMAR.\r\n";
+    msg = "stacking for an exception entry has caused one or more access violations. When this bit is 1, the SP is still adjusted but the values in the context area on the stack might be incorrect. The processor has not written a fault address to the MMAR.\r\n";
   } else {
-    msg = "no stacking fault.";
+    msg = "no stacking fault.\r\n";
   }
 
   output_string(msg);
@@ -423,6 +421,7 @@ void bfsrprint(uint32_t obfsr) {
   char *msg = "N/A\r\n";
   if (BFARVALID) {
     msg = "BFAR holds a valid fault address\r\n";
+  cangoback = true;
   } else {
     msg = "value in BFAR is not a valid fault address\r\n";
   }

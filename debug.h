@@ -1,5 +1,6 @@
 #pragma once
 #include<stdint.h>
+#include<stdbool.h>
 
 // these two functions are implemented in assembly
 extern void goback(uint32_t addr);    // debug function to jump back to assembly and we can go to a faulted instruction

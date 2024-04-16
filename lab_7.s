@@ -286,7 +286,11 @@ cont_uart:
 	mov		r10, #0
 	movt	r10, #0xFF00	; filter for orientation
 	and		r1, r7, r10		; r1 contains the orientation
-	
+	lsr		r1, r1, #24		; shove it back so its the smallest two bytes
+	; need to swap r0 and r1
+	mov		r12, r1			; DANCE!
+	mov		r1, r0
+	mov		r0, r12
 	bl		rcd				; convert the relative wasd to NSEW
 	; now we store r0 into nextMovement
 	ldr		r4, movp
