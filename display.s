@@ -34,11 +34,16 @@ sidebar     .string "|"
 ;       100 = BLUE
 ;       101 = MAGENTA
 ;       110 = CYAN
-                ; P  F   R  C  COL
-                ; 00 001 00 00 000 001 00 01 000 001 00 10 000
-disp_row_00:    .word 0x08, 0x02, 0x02, 0x90
-disp_row_01:    .word 0x
-disp_row_10:    .word
+; P  F  R C CLR F  R C CLR F  R C CLR
+; 11 0010000000 0010001000 0010010000
+; C    8   0    2   2   0    9   0
+; 01 0010100000 0010101000 0010110000
+; 4    A   0    2   A   0    B   0
+; 11 0011000000 0011001000 0011010000
+; C    C   0    3   2   0    D   0
+disp_row_00:    .word 0xC8022090
+disp_row_01:    .word 0x4A02A0B0
+disp_row_10:    .word 0xCC0320D0
 
 ; DISPLAY MATRIX
 ; the current face will be passed in by r0
