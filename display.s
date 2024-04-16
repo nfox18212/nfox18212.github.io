@@ -1,26 +1,27 @@
 ; COLOR STRINGS
 
     .data
+    
 ; background (squares)
-redbg:      .string 27,"[48;5;31H"
-greenbg:    .string 27,"[48;5;32H"
-yellowbg:   .string 27,"[48;5;33H"
-bluebg:     .string 27,"[48;5;34H"
-magentabg:  .string 27,"[48;5;35H"
-cyanbg:     .string 27,"[48;5;36H"
+redbg:      .cstring 27,"[48;5;31H"
+greenbg:    .cstring 27,"[48;5;32H"
+yellowbg:   .cstring 27,"[48;5;33H"
+bluebg:     .cstring 27,"[48;5;34H"
+magentabg:  .cstring 27,"[48;5;35H"
+cyanbg:     .cstring 27,"[48;5;36H"
 
 ; foreground (player)
-redfg:      .string 27,"[38;5;31H"
-greenfg:    .string 27,"[38;5;32H"
-yellowfg:   .string 27,"[38;5;33H"
-bluefg:     .string 27,"[38;5;34H"
-magentafg:  .string 27,"[38;5;35H"
-cyanfg:     .string 27,"[38;5;36H"
+redfg:      .cstring 27,"[38;5;31H"
+greenfg:    .cstring 27,"[38;5;32H"
+yellowfg:   .cstring 27,"[38;5;33H"
+bluefg:     .cstring 27,"[38;5;34H"
+magentafg:  .cstring 27,"[38;5;35H"
+cyanfg:     .cstring 27,"[38;5;36H"
 
 ; useful strings for display
-topbotbar   .string "+-----------------+"
-midbar      .string "-----"
-sidebar     .string "|"
+topbotbar   .cstring "+-----------------+"
+midbar      .cstring "-----"
+sidebar     .char "|"
 
 ; DECLARE DISPLAY MATRIX
 ; left-most 2 bits keep track of where the player is given he is always on the display.
@@ -44,13 +45,22 @@ sidebar     .string "|"
 disp_row_00:    .word 0xC8022090
 disp_row_01:    .word 0x4A02A0B0
 disp_row_10:    .word 0xCC0320D0
+rotated_mat:    .word 0x0
+
+    .global     playerdata
 
 ; DISPLAY MATRIX
 ; the current face will be passed in by r0
 ; it will output face and orientation in r0 and r1 respectively
 ; need player position, current face, and orientation
 
+
+    .text
+
+playerdatap:    .word  playerdata
+
 ; creates initial display matrix
+; face 1, orientation 0, player at [1,1]
 display_init:
     push    {r4-r12, lr}
     ; ROW 0
@@ -136,8 +146,8 @@ transpose:
 ; rotation subroutine
 rotate_full:
     ; take in number of rotations
-    bl col_reflection
-    bl transpose
+    bl      col_reflection
+    bl      transpose
     ; compare number of rotations to 0
     ; if 0, move on
     ; if not, decrement number of rotations
@@ -147,6 +157,12 @@ rotate_full:
 output_matrix:
     ; see orientation
     ; call rotation sub
+    push    {r0}
+    
+    ; output top bar
+    ldr     r0, topbotbar
+    bl      output_string
+    ; carriage return, new line, null
 
 
 
