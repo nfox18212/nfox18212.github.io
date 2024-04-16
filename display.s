@@ -48,11 +48,84 @@ disp_row_10:    .word 0xCC0320D0
 ; DISPLAY MATRIX
 ; the current face will be passed in by r0
 ; it will output face and orientation in r0 and r1 respectively
+; need player position, current face, and orientation
 
 ; creates initial display matrix
 display_init:
-    
+    push    {r4-r12, lr}
+    ; ROW 0
+    mov     r0, #0x64           ; cell 100
+    movt    r0, #0x0
+    bl      get_color
+    lsl     r0, r0, #20         ; 20 place for col 0 color
+    ldr     r1, disp_row_00     
+    orr     r1, r1, r0          ; mask in color
+    str     r0, disp_row_00     ; store color in datastructure
 
+    mov     r0, #0x65           ; cell 101
+    movt    r0, #0x0
+    bl      get_color
+    lsl     r0, r0, #10         ; 10 place for col 1 color
+    ldr     r1, disp_row_00
+    orr     r1, r1, r0          ; mask in color
+    str     r0, disp_row_00     ; store color in datastructure
+
+    mov     r0, #0x66           ; cell 102    
+    movt    r0, #0x0
+    bl      get_color
+    ldr     r1, disp_row_00
+    orr     r1, r1, r0          ; mask in color
+    str     r0, disp_row_00     ; store color in datastructure
+
+    ; ROW 1
+    mov     r0, #0x6E           ; cell 110
+    movt    r0, #0x0
+    bl      get_color
+    lsl     r0, r0, #20         ; 20 place for col 0 color
+    ldr     r1, disp_row_01
+    orr     r1, r1, r0          ; mask in color
+    str     r0, disp_row_01     ; store color in datastructure
+
+    mov     r0, #0x6F           ; cell 111
+    bl      get_color
+    lsl     r0, r0, #10         ; 10 place for col 1 color
+    ldr     r1, disp_row_01
+    orr     r1, r1, r0          ; mask in color
+    str     r0, disp_row_01     ; store color in datastructure
+
+    mov     r0, #0x70           ; cell 112
+    movt    r0, #0x0
+    bl      get_color
+    ldr     r1, disp_row_01
+    orr     r1, r1, r0          ; mask in color
+    str     r0, disp_row_01     ; store color in datastructure
+
+    ; ROW 2
+    mov     r0, #0x78           ; cell 120
+    movt    r0, #0x0
+    bl      get_color
+    lsl     r0, r0, #20         ; 20 place for col 0 color
+    ldr     r1, disp_row_02     
+    orr     r1, r1, r0          ; mask in color
+    str     r0, disp_row_02     ; store color in datastructure
+
+    mov     r0, #0x79           ; cell 121
+    movt    r0, #0x0
+    bl      get_color
+    lsl     r0, r0, #10         ; 10 place for col 1 color
+    ldr     r1, disp_row_02
+    orr     r1, r1, r0          ; mask in color
+    str     r0, disp_row_02     ; store color in datastructure
+
+    mov     r0, #0x7A           ; cell 122   
+    movt    r0, #0x0
+    bl      get_color
+    ldr     r1, disp_row_02
+    orr     r1, r1, r0          ; mask in color
+    str     r0, disp_row_02     ; store color in datastructure
+
+    pop     {r4-r12, lr}
+    mov     pc, lr
 
 ; column reflection subroutine
 col_reflection:
