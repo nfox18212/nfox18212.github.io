@@ -15,6 +15,11 @@ bluefg:     .string 27,"[38;5;34H"
 magentafg:  .string 27,"[38;5;35H"
 cyanfg:     .string 27,"[38;5;36H"
 
+; useful strings for display
+topbotbar   .string "+-----------------+"
+midbar      .string "-----"
+sidebar     .string "|"
+
 ; DECLARE DISPLAY MATRIX
 ; left-most 2 bits keep track of where the player is given he is always on the display.
 ; 00-10 flag the column he stands in the row, 11 shows he is not in the row.
@@ -27,15 +32,20 @@ cyanfg:     .string 27,"[38;5;36H"
 ;       100 = BLUE
 ;       101 = MAGENTA
 ;       110 = CYAN
-disp_row_00:    .word
-disp_row_01:    .word
+                ; P  F   R  C  COL
+                ; 00 001 00 00 000 001 00 01 000 001 00 10 000
+disp_row_00:    .word 0x08, 0x02, 0x02, 0x90
+disp_row_01:    .word 0x
 disp_row_10:    .word
 
 ; DISPLAY MATRIX
 ; the current face will be passed in by r0
 ; it will output face and orientation in r0 and r1 respectively
+
+; creates initial display matrix
 display_init:
-    ; 
+    
+
 
 ; column reflection subroutine
 col_reflection:
