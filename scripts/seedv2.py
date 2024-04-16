@@ -75,6 +75,7 @@ seed = 0x5f3759df
 
 global colorOrder
 colorOrder : List[int] = []
+# colorOrder = []
 
 initColorOrder()
 

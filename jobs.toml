@@ -4,6 +4,7 @@ main_routine="both"
 move_player="nate"
 end_game="nate"
 pausing="nate"
+collision_detection="nate"
 
 [datastructures.s]
 display_matrix="sebastien"
@@ -11,8 +12,7 @@ row_reflection="sebastien"
 column_reflection="sebastien"
 
 [rng.s]
-create_seed="nate"
-fill_board="nate"
+status="done?"
 
 [display.s]
 main_menu="sebastien"

@@ -1,4 +1,6 @@
 ; COLOR STRINGS
+
+    .data
 ; background (squares)
 redbg:      .string 27,"[48;5;31H"
 greenbg:    .string 27,"[48;5;32H"
@@ -51,7 +53,7 @@ display_init:
 col_reflection:
 
 ; transpose subroutine
-transpose_reflection:
+transpose:
 
 ; rotation subroutine
 rotate_full:
