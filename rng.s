@@ -84,9 +84,9 @@ reduce: ; can't be a macro bc of loop
 fill_alist:
 	; actually iterates through the color_list to put the colors into it
 	ldrb	r1, [r2], #1	; post-indexed by 1 byte to iterate through the color list for each color
-	ldrh	r0, [r2], #2	; post indexed by 2 to iterate through cell list
-	mov		r4, #0xFFFF		; stop byte
-	cmp		r0, r4		; make sure its not the end of the cell list
+	ldrb	r0, [r2], #2	; post indexed by 2 to iterate through cell list
+	mov		r4, #0xFF		; stop byte
+	cmp		r0, r4			; make sure its not the end of the cell list
 	ite	ne
 	blne	set_color		; set the color from the color list
 	moveq	pc, lr			; if we hit the 0xFFFF byte, return

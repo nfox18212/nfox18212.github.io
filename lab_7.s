@@ -50,6 +50,7 @@ playerdata:		.word	0x0006006F	; from largest byte to smallest: byte 0: orientati
 	.global	playerdata
 
 	.text
+	.def include_debug = 1
 
 	.global init
 	.global UART0_Handler
@@ -67,7 +68,9 @@ playerdata:		.word	0x0006006F	; from largest byte to smallest: byte 0: orientati
 	.global rcd
 	.global extract_cid
 	.global new_o
+	.if include_debug
 	.global crash
+	.endif
 	.global	seed
 
 
@@ -120,19 +123,8 @@ poll:							; temporary label
 	nop
 
 
-
-
-
-
 	pop		{r4-r12,lr}
 	mov		pc, lr
-
-
-
-
-
-
-
 
 
 detect_collision:
@@ -193,7 +185,7 @@ move:
 
 	push	{r0-r2}			; preserve new cell, direction, and orientation in that order
 
-		mov		r1, r0			; put new cell into r1
+	mov		r1, r0			; put new cell into r1
 	mov		r0, r6			; put old cell into r0
 	; detect for collision
 	; detect_collision will return 0 or 1 in r2.  if 1, there's a collision so reject movement
@@ -280,6 +272,9 @@ UART0_Handler:
 	b		exit_uart_handler
 
 cont_uart:
+	; print it
+	bl		output_character
+	newl
 	; change the relative direction dir to absolute - we need orientation form playerdata
 	ldr		r6, playerdatap
 	ldr		r7, [r6, #0]
@@ -355,9 +350,9 @@ Timer_Handler:
 	; re-enable interrupt
 	mov		r4, #0x0000
 	movt	r4, #0x4003
-	ldr		r5, [r4, #0x18]
+	ldr		r5, [r4, #0x24]
 	orr		r5, r5, #0x1
-	str		r5, [r4, #0x18]
+	str		r5, [r4, #0x24]
 
 	pop		{r4-r11, lr}
 	bx  	lr     ; Return

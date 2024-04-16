@@ -60,14 +60,14 @@ ptr_to_space2:			.word space2
 ptr_to_eightyspaces:	.word eightyspaces
 ptr_to_sixtyspaces:		.word sixtyspaces ; for use with a 80 character wide terminal
 ptr_to_yellatuser:		.word yellatuser
-ptr_to_lab4prompt		.word lab4prompt
-ptr_to_introdummy		.word introdummy
-ptr_to_restart			.word restartprompt
+ptr_to_lab4prompt:		.word lab4prompt
+ptr_to_introdummy:		.word introdummy
+ptr_to_restart:			.word restartprompt
 
-
-
+globals:	.word 0x0
 
 	.text
+	
 	.global uart_init
 	.global init
 	.global output_character
@@ -90,8 +90,6 @@ clear:		.equ	0xC		; form feed, new page
 newline:	.equ	0xA
 return:		.equ	0xD		; carriage return
 star:		.equ	0x2A	; * - the asterisk
-
-
 
 init:
 	push	{r4-r12,lr}
@@ -199,7 +197,7 @@ timer_init:
 	; disable timer 0
 	mov		r4, #0x0000
 	movt	r4, #0x4003
-	; base addr for timer 1
+	; base badaddr or timer 1
 	add		r8, r4, #0x1000
 
 	ldr		r5, [r4, #0xC]
@@ -247,8 +245,8 @@ timer_init:
 	; set period to 8M ticks, so twice per second
 	; mov		r5, #0x2400
 	; movt	r5, #0x007A
-	mov		r5, #0x8000
-	movt	r5, #0x7FFF
+	mov		r5, #0xFF00
+	movt	r5, #0xFF00
 	; make period to interrupt stupidly big
 	str		r5, [r4, #0x28]
 
@@ -755,8 +753,9 @@ gpio_interrupt_init:
 
 goback:	
 	; we are here from C, so r0 contains the address
-	sub		r3, r0, #4	; go back one instruction
+	sub		r3, r0, #6	; go back two instructions
 	pop		{r0} 		; restore original r0
+	pop		{r0-r2, r4-r12, lr} ; preserve as much context as possible
 	mov		pc, r3
 
 	.end

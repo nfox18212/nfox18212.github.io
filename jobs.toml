@@ -19,3 +19,6 @@ main_menu="sebastien"
 animations="sebastien"
 draw_board="sebastien"
 player_color_swap="sebastien"
+
+[documentation]
+nate="document inputs/outputs for all data structure subroutines"

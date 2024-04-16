@@ -1,10 +1,16 @@
 #pragma once
-#include<stdint.h>
-#include<stdbool.h>
+
+#include "debug_config.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#define clc 0xC  // form feed character to clear screen
+#define newl 0xDA // carriage return and newline
 
 // these two functions are implemented in assembly
-extern void goback(uint32_t addr);    // debug function to jump back to assembly and we can go to a faulted instruction
-extern void output_string(char *str); // print to uart
+extern void goback(uint32_t addr);     // debug function to jump back to assembly and we can go to a faulted instruction
+extern void output_string(char *str);  // print to uart
+extern void output_character(char a);
 
 // fault handling functions
 uint32_t handle_memfualt(uint32_t mmsr);
@@ -16,3 +22,7 @@ void mmsrprint(uint32_t mmsr);
 void bfsrprint(uint32_t bfsr);
 void ufsrprint(uint32_t ufsr);
 
+void handlefault(void);
+void customfault(uint32_t baddr);
+void normalfault(void);
+void serial_init(void);
