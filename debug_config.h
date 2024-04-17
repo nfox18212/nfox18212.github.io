@@ -4,5 +4,5 @@
 #define en_uart_int 1 // uart is enabled
 #define en_timer_int 1
 #define en_uart_init 0 // use this to indicate if this code should initialize uart
-#define en_uart_out 0 // if you do not have an implementation of uart_out, enable this
+#define en_uart_out 1 // if you do not have an implementation of uart_out, disable this
 

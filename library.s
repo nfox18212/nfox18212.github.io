@@ -1,3 +1,19 @@
+clc .macro
+	push	{r0}
+	mov		r0, #clear	; form feed
+	bl	output_character
+	pop		{r0}
+	.endm
+
+newl .macro				; print a newline
+	push 	{r0}
+	mov		r0, #return
+	bl		output_character
+	mov		r0, #newline
+	bl		output_character
+	pop		{r0}
+	.endm
+
 peightyspaces .macro
 	push	{r0}
 	ldr		r0, ptr_to_eightyspaces
@@ -12,6 +28,20 @@ psixtyspaces .macro
 	pop		{r0}
 	.endm
 ; these macros exist to print whitespace out.  Exactly 60 and 80 spaces, and they both preserve r0
+calculate_offset .macro xpos, ypos, offset
+	; leaf macro,  offset = 22*ypos + xpos
+	push	{r4,r5}
+	mov		r5, #22
+	mul		r4, ypos, r5
+	add		offset, r4, xpos
+	pop		{r4,r5}
+	.endm
+
+add3 .macro P1, P2, P3, ADDRP ; debug macro
+	ADD ADDRP, P1, P2
+	ADD ADDRP, ADDRP, P3
+	.endm
+
 .data
 
 	.global numPrompt
@@ -82,6 +112,7 @@ globals:	.word 0x0
 	.global uart_interrupt_init
 	.global gpio_interrupt_init
 	.global goback
+	.global crash
 
 sw1mask:	.equ	0xEF	; bitmask to mask out for SW1, pin 4
 sw1write:	.equ 	0x10	; bitmasks to write a 1 for SW1, pin 4

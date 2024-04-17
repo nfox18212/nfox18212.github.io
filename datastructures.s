@@ -5,7 +5,42 @@ clc .macro
 	pop		{r0}
 	.endm
 
-	.data
+newl .macro				; print a newline
+	push 	{r0}
+	mov		r0, #return
+	bl		output_character
+	mov		r0, #newline
+	bl		output_character
+	pop		{r0}
+	.endm
+
+peightyspaces .macro
+	push	{r0}
+	ldr		r0, ptr_to_eightyspaces
+	bl		output_string
+	pop		{r0}
+	.endm
+
+psixtyspaces .macro
+	push	{r0}
+	ldr		r0, ptr_to_sixtyspaces
+	bl		output_string
+	pop		{r0}
+	.endm
+; these macros exist to print whitespace out.  Exactly 60 and 80 spaces, and they both preserve r0
+calculate_offset .macro xpos, ypos, offset
+	; leaf macro,  offset = 22*ypos + xpos
+	push	{r4,r5}
+	mov		r5, #22
+	mul		r4, ypos, r5
+	add		offset, r4, xpos
+	pop		{r4,r5}
+	.endm
+
+add3 .macro P1, P2, P3, ADDRP ; debug macro
+	ADD ADDRP, P1, P2
+	ADD ADDRP, ADDRP, P3
+	.endm
 
 mats: 		.space 	128 	; matrix storage, size will need to change - sebastien this is yours to implement
 
@@ -103,7 +138,6 @@ globals: 	.byte 0x0 			; don't use this, its only for vscode folding and searchi
 	.global addr
 
 	.text
-	.def include_debug = 1
 
 	.global new_o
 	.global rcd
@@ -114,9 +148,8 @@ globals: 	.byte 0x0 			; don't use this, its only for vscode folding and searchi
 	.global div_and_mod ; from library
 	.global	output_string ; from library
 	.global dirindex
-	.if include_debug
-		.global crash
-	.endif
+	.global crash
+
 
 
 
@@ -206,11 +239,10 @@ rcd:
 	moveq 	r4, #15
 	beq		rcdAfter_if
 
-	.if include_debug
+	
 	; if its an invalid orientation, continue
 	ldr		r0, rcdstrp
 	bl		crash
-	.endif
 		; now mask based on direction
 rcdAfter_if:
 
@@ -238,9 +270,9 @@ rcdAfter_if:
 	addeq	r4, r4, #3
 	beq		rcdAfter_if2
 
-	.if include_debug
+	
 	bl		crash
-	.endif
+	
 
 rcdAfter_if2:
 	; we have the new offset, load the associated cardinal direction
@@ -349,11 +381,11 @@ get_cell:
 	mlane	r6, r4, r5, r6; r6 = r4*r5 + r6
 	
 
-	.if include_debug
+	
 	; if r4 > 4, something has horribly wrong and crash the program
 	ldr		r0, getclcrashp ; custom crash string
 	bgt		crash
-	.endif
+	
 
 	
 	ldr		r5, alistp 		; grab ptr to alist
@@ -458,9 +490,9 @@ dirindex:
 	moveq	r0, #3
 	moveq	pc, lr
 
-	.if include_debug
+	
 	; if its not any of the above stuff, crash
 	bl		crash
-	.endif
+	
 
 	.end

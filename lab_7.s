@@ -14,6 +14,20 @@ newl .macro				; print a newline
 	pop		{r0}
 	.endm
 
+peightyspaces .macro
+	push	{r0}
+	ldr		r0, ptr_to_eightyspaces
+	bl		output_string
+	pop		{r0}
+	.endm
+
+psixtyspaces .macro
+	push	{r0}
+	ldr		r0, ptr_to_sixtyspaces
+	bl		output_string
+	pop		{r0}
+	.endm
+; these macros exist to print whitespace out.  Exactly 60 and 80 spaces, and they both preserve r0
 calculate_offset .macro xpos, ypos, offset
 	; leaf macro,  offset = 22*ypos + xpos
 	push	{r4,r5}
@@ -27,7 +41,6 @@ add3 .macro P1, P2, P3, ADDRP ; debug macro
 	ADD ADDRP, P1, P2
 	ADD ADDRP, ADDRP, P3
 	.endm
-
 
 	.data
 
@@ -50,7 +63,8 @@ playerdata:		.word	0x0006006F	; from largest byte to smallest: byte 0: orientati
 	.global	playerdata
 
 	.text
-	.def include_debug = 1
+
+include_debug:		.set 1
 
 	.global init
 	.global UART0_Handler
@@ -68,7 +82,7 @@ playerdata:		.word	0x0006006F	; from largest byte to smallest: byte 0: orientati
 	.global rcd
 	.global extract_cid
 	.global new_o
-	.if include_debug
+	.if include_debug=1
 	.global crash
 	.endif
 	.global	seed

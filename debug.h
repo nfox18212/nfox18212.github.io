@@ -1,11 +1,11 @@
 #pragma once
 
-#include "debug_config.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include "debug_config.h"
 
-#define clc 0xC  // form feed character to clear screen
-#define newl 0xDA // carriage return and newline
+#define clearscreen 0xC  // form feed character to clear screen
+#define newline 0xDA // carriage return and newline
 
 // these two functions are implemented in assembly
 extern void goback(uint32_t addr);     // debug function to jump back to assembly and we can go to a faulted instruction

@@ -1,38 +1,37 @@
 #include "debug.h"
-#define include_sp
+
+
+// global variable for debug function
+static bool cangoback = false;
 
 void handlefault(void) {
 
-  uint32_t badaddr;  // technically this should be a pointer, but it doesn't matter.  its not going to be used anywhere except in assembly, so type doesn't really matter
+  uint32_t badaddr=0;  // technically this should be a pointer, but it doesn't matter.  its not going to be used anywhere except in assembly, so type doesn't really matter
 
   uint8_t didcrash = 0;
   // preserve r0 by pushing it to the stack
-  asm volatile(
-      "\t.data\n"
-      ".global didcrash\n"
-      ".global baddr\n"
-      "\t.text\n"
-      "didcrashp: .word didcrash\n"
-      "baddrp:    .word baddr"
-      "preserve:\n"
-      "stm sp!, {r0, r5}\n"  // push r0 and r5 to the stack
-      "ldr r5, didcrashp\n"
-      "ldr %0, [r5, #0]\n"
-      "ldr r5, baddr\n"
-      "ldr, %1, [r5, #0]\n"
-      "ldm sp!, {r0, r5}\n"  // pop both of them so make sure stack is valid
-      "stm sp!, {r0}\n"      // this ensures only r0 is on the stack
-      // no input operands
-      :
-      // outputs
-      : "=r"(didcrash), "=r"(badaddr)
+//  asm volatile(
+//      "\t.data\n"
+//      ".global didcrash\n"
+//      ".global baddr\n"
+//      "\t.text\n"
+//      "didcrashp: .word didcrash\n"
+//      "baddrp:    .word baddr"
+//      "preserve:\n"
+//      "stm sp!, {r0, r5}\n"  // push r0 and r5 to the stack
+//      "ldr r5, didcrashp\n"
+//      "ldr %0, [r5, #0]\n"
+//      "ldr r5, baddr\n"
+//      "ldr, %1, [r5, #0]\n"
+//      "ldm sp!, {r0, r5}\n"  // pop both of them so make sure stack is valid
+//      "stm sp!, {r0}\n"      // this ensures only r0 is on the stack
+//      // no input operands
+//      );
+//      // outputs
+//      : "=r"(didcrash), "=r"(badaddr)
 // clobber list - including sp might be a bad idea
-#ifdef include_sp
-      : "r0, r5, sp"
-#elif
-      : "r0, r5"
-#endif
-  );
+//      : "r0, r5, sp"
+//  );
 
   if (didcrash) {
     customfault(badaddr);
@@ -51,6 +50,8 @@ void customfault(uint32_t baddr) {
 
 void normalfault(void) {
 
+
+  uint32_t badaddr;
   volatile void *cfsr = (volatile void *)0xE000ED28;  // address of the configurable fault status register, can get further information from bitmasking this
 
   uint32_t mmsr = (*(uint32_t *)cfsr) & (uint32_t)0xFF;        // memfault status register is only 1 byte in size
@@ -342,12 +343,14 @@ void serial_init(void) {
 
 char *addrtostring(uint32_t addr) {
   // converts a address to a hexadecimal string to print it out - bounded with a max of 8 characters for a 4 byte address
-  char[10] str;
+  char* string = "";
   // first two characters are 0x
   uint8_t filter = 0xF;
-  str[0] = '0';
-  str[1] = 'x';
-  for (int i = 2; i < 9; i++) {
+  string[0] = '0';
+  string[1] = 'x';
+
+  int i=0;
+  for (i=2; i < 9; i++) {
     uint32_t num = addr & filter;  // pull targeted nibble out
     num = num >> i;                // force it to be smallest nibble, so 0xA0 would turn into 0x0A
     char numc;                     // num but character verison
@@ -357,6 +360,8 @@ char *addrtostring(uint32_t addr) {
       // here we need to use A-F, which will be 0x37 + num.  0xA + 0x37 = 0x41 for example
       numc = 0x37 + num;
     }
-    str[i] = numc;
+    string[i] = numc;
   }
+
+  return string;
 }

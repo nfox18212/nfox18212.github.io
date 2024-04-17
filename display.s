@@ -3,23 +3,23 @@
     .data
     
 ; background (squares)
-redbg:      .cstring 27,"[48;5;31H"
-greenbg:    .cstring 27,"[48;5;32H"
-yellowbg:   .cstring 27,"[48;5;33H"
-bluebg:     .cstring 27,"[48;5;34H"
-magentabg:  .cstring 27,"[48;5;35H"
-cyanbg:     .cstring 27,"[48;5;36H"
+redbg:      .string 27,"[48;5;31H"
+greenbg:    .string 27,"[48;5;32H"
+yellowbg:   .string 27,"[48;5;33H"
+bluebg:     .string 27,"[48;5;34H"
+magentabg:  .string 27,"[48;5;35H"
+cyanbg:     .string 27,"[48;5;36H"
 
 ; foreground (player)
-redfg:      .cstring 27,"[38;5;31H"
-greenfg:    .cstring 27,"[38;5;32H"
-yellowfg:   .cstring 27,"[38;5;33H"
-bluefg:     .cstring 27,"[38;5;34H"
-magentafg:  .cstring 27,"[38;5;35H"
-cyanfg:     .cstring 27,"[38;5;36H"
+redfg:      .string 27,"[38;5;31H"
+greenfg:    .string 27,"[38;5;32H"
+yellowfg:   .string 27,"[38;5;33H"
+bluefg:     .string 27,"[38;5;34H"
+magentafg:  .string 27,"[38;5;35H"
+cyanfg:     .string 27,"[38;5;36H"
 
 ; useful strings for display
-topbotbar   .cstring "+-----------------+"
+topbotbar   .string "+-----------------+", 0xD, 0xA, 0x0
 midbar      .cstring "-----"
 sidebar     .char "|"
 
@@ -45,6 +45,10 @@ sidebar     .char "|"
 disp_row_00:    .word 0xC8022090
 disp_row_01:    .word 0x4A02A0B0
 disp_row_10:    .word 0xCC0320D0
+disp_row_20: 	.word 0x0
+disp_row_02:	.word 0x0
+
+
 rotated_mat:    .word 0x0
 
     .global     playerdata
@@ -57,7 +61,18 @@ rotated_mat:    .word 0x0
 
     .text
 
-playerdatap:    .word  playerdata
+    .global 	output_character
+    .global		output_string
+    .global		get_color
+    .global		set_color
+
+disp_row_00p:	.word disp_row_00
+disp_row_01p:	.word disp_row_01
+disp_row_10p:	.word disp_row_10
+playerdatap:    .word playerdata
+disp_row_20p: 	.word disp_row_20
+disp_row_02p:	.word disp_row_02
+topbotbarp:		.word topbotbar
 
 ; creates initial display matrix
 ; face 1, orientation 0, player at [1,1]
@@ -68,71 +83,80 @@ display_init:
     movt    r0, #0x0
     bl      get_color
     lsl     r0, r0, #20         ; 20 place for col 0 color
-    ldr     r1, disp_row_00     
+    ldr     r2, disp_row_00p
+    ldr		r1, [r2, #0]
     orr     r1, r1, r0          ; mask in color
-    str     r0, disp_row_00     ; store color in datastructure
+    str     r0, [r2, #0]    ; store color in datastructure
 
     mov     r0, #0x65           ; cell 101
     movt    r0, #0x0
     bl      get_color
     lsl     r0, r0, #10         ; 10 place for col 1 color
-    ldr     r1, disp_row_00
+    ldr     r2, disp_row_00p
+    ldr		r1, [r2, #0]
     orr     r1, r1, r0          ; mask in color
-    str     r0, disp_row_00     ; store color in datastructure
+    str     r0, [r2, #0]     ; store color in datastructure
 
     mov     r0, #0x66           ; cell 102    
     movt    r0, #0x0
     bl      get_color
-    ldr     r1, disp_row_00
+    ldr     r2, disp_row_00p
+    ldr		r1, [r2, #0]
     orr     r1, r1, r0          ; mask in color
-    str     r0, disp_row_00     ; store color in datastructure
+    str     r0, [r2, #0]   ; store color in datastructure
 
     ; ROW 1
     mov     r0, #0x6E           ; cell 110
     movt    r0, #0x0
     bl      get_color
     lsl     r0, r0, #20         ; 20 place for col 0 color
-    ldr     r1, disp_row_01
+    ldr     r2, disp_row_01p
+    ldr		r1, [r2, #0]
     orr     r1, r1, r0          ; mask in color
-    str     r0, disp_row_01     ; store color in datastructure
+    str     r0,[r2, #0]     ; store color in datastructure
 
     mov     r0, #0x6F           ; cell 111
     bl      get_color
     lsl     r0, r0, #10         ; 10 place for col 1 color
-    ldr     r1, disp_row_01
+    ldr     r2, disp_row_01p
+    ldr		r1, [r2, #0]
     orr     r1, r1, r0          ; mask in color
-    str     r0, disp_row_01     ; store color in datastructure
+    str     r0, [r2, #0]     ; store color in datastructure
 
     mov     r0, #0x70           ; cell 112
     movt    r0, #0x0
     bl      get_color
-    ldr     r1, disp_row_01
+    ldr     r2, disp_row_01p
+    ldr		r1, [r2, #0]
     orr     r1, r1, r0          ; mask in color
-    str     r0, disp_row_01     ; store color in datastructure
+    str     r0, [r2, #0]    ; store color in datastructure
 
     ; ROW 2
     mov     r0, #0x78           ; cell 120
     movt    r0, #0x0
     bl      get_color
     lsl     r0, r0, #20         ; 20 place for col 0 color
-    ldr     r1, disp_row_02     
+    ldr     r2, disp_row_02p
+    ldr		r1, [r2, #0]
     orr     r1, r1, r0          ; mask in color
-    str     r0, disp_row_02     ; store color in datastructure
+    str     r0, [r2, #0]   ; store color in datastructure
 
     mov     r0, #0x79           ; cell 121
     movt    r0, #0x0
     bl      get_color
     lsl     r0, r0, #10         ; 10 place for col 1 color
-    ldr     r1, disp_row_02
+    ldr     r2, disp_row_02p
+    ldr		r1, [r2, #0]
     orr     r1, r1, r0          ; mask in color
-    str     r0, disp_row_02     ; store color in datastructure
+    str     r0, [r2, #0]    ; store color in datastructure
 
     mov     r0, #0x7A           ; cell 122   
     movt    r0, #0x0
     bl      get_color
-    ldr     r1, disp_row_02
+    ldr     r2, disp_row_02p
+    ldr		r1, [r2, #0]
     orr     r1, r1, r0          ; mask in color
-    str     r0, disp_row_02     ; store color in datastructure
+    str     r0, [r2, #0]     ; store color in datastructure
 
     pop     {r4-r12, lr}
     mov     pc, lr
@@ -160,7 +184,7 @@ output_matrix:
     push    {r0}
     
     ; output top bar
-    ldr     r0, topbotbar
+    ldr     r0, topbotbarp
     bl      output_string
     ; carriage return, new line, null
 

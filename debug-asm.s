@@ -1,18 +1,47 @@
+	.cdecls C,NOLIST,"debug.h"
+
 clc .macro
 	push	{r0}
-	mov		r0, #clear	; form feed
+	mov		r0, #0xC	; form feed
 	bl	output_character
 	pop		{r0}
 	.endm
 
 newl .macro				; print a newline
 	push 	{r0}
-	mov		r0, #return
+	mov		r0, #0xD
 	bl		output_character
-	mov		r0, #newline
+	mov		r0, #0xA
 	bl		output_character
 	pop		{r0}
 	.endm
+
+peightyspaces .macro
+	push	{r0}
+	ldr		r0, ptr_to_eightyspaces
+	bl		output_string
+	pop		{r0}
+	.endm
+
+psixtyspaces .macro
+	push	{r0}
+	ldr		r0, ptr_to_sixtyspaces
+	bl		output_string
+	pop		{r0}
+	.endm
+; these macros exist to print whitespace out.  Exactly 60 and 80 spaces, and they both preserve r0
+calculate_offset .macro xpos, ypos, offset
+	; leaf macro,  offset = 22*ypos + xpos
+	push	{r4,r5}
+	mov		r5, #22
+	mul		r4, ypos, r5
+	add		offset, r4, xpos
+	pop		{r4,r5}
+	.endm
+
+
+
+
 
 
 .data
@@ -23,19 +52,20 @@ baddr:		.word 0x0
 	.global	didcrash
 	.global baddr
 
-.text
+	.text
 
-.ref en_gpio_int
-.ref en_uart_int
-.ref en_timer_int
-.ref en_uart_out
 
-.if en_uart_out=0
-.global output_character
-.global output_string
-.else
-.ref uprintf // c function to print to uart
-.endif
+	.global crash
+
+
+	.if en_uart_out=1
+	.global output_character
+	.global output_string
+	.endif
+
+	.if en_uart_out=0
+	.global uprintf ; c function to print to uart
+	.endif
 
 didcrashp:  .word didcrash
 baddrp:     .word baddr
@@ -45,7 +75,7 @@ crash:
 	; takes crash string in r0
 	; make this code uninterruptible
 	push	{r0-r2, r4-r12, lr} ; preserve but r3 to be able to restore context because jumping to fault
-    .if en_timer_int=1
+    .if en_timer_int==1
     ; disable timer 0
 	mov		r4, #0x0000
 	movt	r4, #0x4003
@@ -87,7 +117,7 @@ crash:
 	str		lr, [r5, #0] ; store lr
 
 
-    ; custom crash string in r0
+    ;; custom crash string in r0
     .if en_uart_out=1
 	clc
 	bl		output_string
