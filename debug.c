@@ -1,40 +1,16 @@
 #include "debug.h"
 
-
 // global variable for debug function
 static bool cangoback = false;
 
 void handlefault(void) {
 
-  uint32_t badaddr=0;  // technically this should be a pointer, but it doesn't matter.  its not going to be used anywhere except in assembly, so type doesn't really matter
+  uint32_t baddr = getbaddr();  // technically this should be a pointer, but it doesn't matter.  its not going to be used anywhere except in assembly, so type doesn't really matter
 
-  uint8_t didcrash = 0;
-  // preserve r0 by pushing it to the stack
-//  asm volatile(
-//      "\t.data\n"
-//      ".global didcrash\n"
-//      ".global baddr\n"
-//      "\t.text\n"
-//      "didcrashp: .word didcrash\n"
-//      "baddrp:    .word baddr"
-//      "preserve:\n"
-//      "stm sp!, {r0, r5}\n"  // push r0 and r5 to the stack
-//      "ldr r5, didcrashp\n"
-//      "ldr %0, [r5, #0]\n"
-//      "ldr r5, baddr\n"
-//      "ldr, %1, [r5, #0]\n"
-//      "ldm sp!, {r0, r5}\n"  // pop both of them so make sure stack is valid
-//      "stm sp!, {r0}\n"      // this ensures only r0 is on the stack
-//      // no input operands
-//      );
-//      // outputs
-//      : "=r"(didcrash), "=r"(badaddr)
-// clobber list - including sp might be a bad idea
-//      : "r0, r5, sp"
-//  );
+  uint8_t didcrash = getdidcrash();
 
   if (didcrash) {
-    customfault(badaddr);
+    customfault(baddr);
   } else {
     normalfault();
   }
@@ -49,7 +25,6 @@ void customfault(uint32_t baddr) {
 }
 
 void normalfault(void) {
-
 
   uint32_t badaddr;
   volatile void *cfsr = (volatile void *)0xE000ED28;  // address of the configurable fault status register, can get further information from bitmasking this
@@ -129,12 +104,7 @@ void mmsrprint(uint32_t mmsr) {
   output_string(msg);
 
   if (MUNSTKERR) {
-    msg = "unstack for an exception return has caused one or more access "
-          "violations. This fault is chained to the handler. This means "
-          "that when this bit is 1, the original return stack is still "
-          "present. The processor has not adjusted the SP from the failing "
-          "return, and has not performed a new save. The processor has not "
-          "written a fault address to the MMAR.\r\n";
+    msg = "unstack for an exception return has caused one or more access violations. This fault is chained to the handler. This means that when this bit is 1, the original return stack is still present. The processor has not adjusted the SP from the failing return, and has not performed a new save. The processor has not written a fault address to the MMAR.\r\n";
   } else {
     msg = "no unstacking fault.\r\n";
   }
@@ -142,11 +112,7 @@ void mmsrprint(uint32_t mmsr) {
   output_string(msg);
 
   if (DACCVIOL) {
-    msg = "The processor attempted a load or store at a location that does "
-          "not permit the operation. When this bit is 1, the PC value "
-          "stacked for the exception return points to the faulting "
-          "instruction. The processor has loaded the MMAR with the address "
-          "of the attempted access.\r\n";
+    msg = "The processor attempted a load or store at a location that does not permit the operation. When this bit is 1, the PC value stacked for the exception return points to the faulting instruction. The processor has loaded the MMAR with the address of the attempted access.\r\n";
   } else {
     msg = "no data access violation fault.\r\n";
   }
@@ -154,8 +120,7 @@ void mmsrprint(uint32_t mmsr) {
   output_string(msg);
 
   if (IACCVIOL) {
-    msg = "The processor attempted an instruction fetch from a location "
-          "that does not permit execution\r\n";
+    msg = "The processor attempted an instruction fetch from a location that does not permit execution\r\n";
   } else {
     msg = "no instruction access violation fault.\r\n";
   }
@@ -343,14 +308,14 @@ void serial_init(void) {
 
 char *addrtostring(uint32_t addr) {
   // converts a address to a hexadecimal string to print it out - bounded with a max of 8 characters for a 4 byte address
-  char* string = "";
+  char *string = "";
   // first two characters are 0x
   uint8_t filter = 0xF;
   string[0] = '0';
   string[1] = 'x';
 
-  int i=0;
-  for (i=2; i < 9; i++) {
+  int i = 0;
+  for (i = 2; i < 9; i++) {
     uint32_t num = addr & filter;  // pull targeted nibble out
     num = num >> i;                // force it to be smallest nibble, so 0xA0 would turn into 0x0A
     char numc;                     // num but character verison

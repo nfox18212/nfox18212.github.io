@@ -782,11 +782,4 @@ gpio_interrupt_init:
 	pop		{r4-r11,lr}
 	mov		pc, lr
 
-goback:	
-	; we are here from C, so r0 contains the address
-	sub		r3, r0, #6	; go back two instructions
-	pop		{r0} 		; restore original r0
-	pop		{r0-r2, r4-r12, lr} ; preserve as much context as possible
-	mov		pc, r3
-
 	.end
