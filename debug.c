@@ -26,7 +26,8 @@ void customfault(uint32_t baddr) {
 
 void normalfault(void) {
 
-  uint32_t badaddr;
+//  void *badaddrp = calloc(1,4); // grab some memory
+  uint32_t badaddr = 0; // where the bad address will be stored
   volatile void *cfsr = (volatile void *)0xE000ED28;  // address of the configurable fault status register, can get further information from bitmasking this
 
   uint32_t mmsr = (*(uint32_t *)cfsr) & (uint32_t)0xFF;        // memfault status register is only 1 byte in size
@@ -34,16 +35,25 @@ void normalfault(void) {
   uint32_t ufsr = (*(uint32_t *)cfsr) & (uint32_t)0xFFFF0000;  // usage fault status reg is upper halfword, mask for just that
 
   if (mmsr != 0) {
-    badaddr = handle_memfualt(mmsr);
+    uint32_t baddr = handle_memfault(mmsr);
+//    *(uint32_t *) badaddrp = baddr; // write to memory
+    badaddr = baddr;
   }
 
   if (bfsr != 0) {
-    badaddr = handle_busfault(mmsr);
+    uint32_t baddr = handle_busfault(bfsr);
+//    *(uint32_t *) badaddrp = baddr;
+    badaddr = baddr;
   }
 
   if (ufsr != 0) {
     // no address register associated with a usage fault
     ufsrprint(ufsr);
+  }
+
+  // make sure baddr is actually valid
+  if(badaddr - 0xFFFFFFFF < 0xF){
+	  cangoback = false;
   }
 
   if (cangoback) {
@@ -58,7 +68,7 @@ void normalfault(void) {
   }
 }
 
-uint32_t handle_memfualt(uint32_t mmsr) {
+uint32_t handle_memfault(uint32_t mmsr) {
   volatile void *mmar = (volatile void *)0xE000ED34;  // address of the MemManage Address Register
   // - contains address of faulted instruction
   mmsrprint(mmsr);
@@ -201,9 +211,9 @@ void bfsrprint(uint32_t obfsr) {
   output_string(msg);
 
   if (IBUSERR) {
-    msg = "instruction bus error.\r\n";
+    msg = "an instruction bus error has occurred.\r\n";
   } else {
-    msg = "no instruction bus errorno instruction bus error.\r\n";
+    msg = "no instruction bus error has occurred.\r\n";
   }
 
   output_string(msg);

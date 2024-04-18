@@ -630,6 +630,7 @@ read_character:
 	mov		r4, #0x10
 							; looking for RxFE flag, which is stored at 0x4000C01C
 rloop:						; Recieve loop
+	; TODO: something's fishy in this subroutine
 	ldrb	r1, [r2, #0x18] ; first thing is to check flag reg to see if buffer is full, r2 contains first half, u0frRF is offset of 4
 	and		r3, r1, #0x10  	; bitmask looking for 1 in last place, store in r3 to preserve flag reg
 	cmp		r3, r4			; check to see if flag reg is 0 or 1 - if 1, loop

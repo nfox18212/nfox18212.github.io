@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include "debug_config.h"
 
 #define clearscreen 0xC  // form feed character to clear screen
@@ -13,7 +14,7 @@ extern void output_string(char *str);  // print to uart
 extern void output_character(char a);
 
 // fault handling functions
-uint32_t handle_memfualt(uint32_t mmsr);
+uint32_t handle_memfault(uint32_t mmsr);
 uint32_t handle_busfault(uint32_t bfsr);
 // there's no ufar register like there is for memory or bus faults
 

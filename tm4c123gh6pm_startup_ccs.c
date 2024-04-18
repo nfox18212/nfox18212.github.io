@@ -23,7 +23,7 @@
 //*****************************************************************************
 
 #include "debug.h"
-// won't work with handlefault for some reason
+
 extern void handlefault(void);
 //*****************************************************************************
 //
@@ -271,7 +271,7 @@ static void NmiSR(void) {
 //
 //*****************************************************************************
 static void FaultISR(void) {
-  int cont = 0;  // should only be modified by debugger
+  int cont = 1;  // should only be modified by debugger
   /*
    * Allow me to copy into an editor what the faulted instruction is, and copy
    * r3 to preserve it.  goback goes to one before the faulted instruction.
