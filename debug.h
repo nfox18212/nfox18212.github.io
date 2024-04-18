@@ -1,12 +1,12 @@
 #pragma once
 
+#include "debug_config.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "debug_config.h"
 
 #define clearscreen 0xC  // form feed character to clear screen
-#define newline 0xDA // carriage return and newline
+#define newline 0xDA     // carriage return and newline
 
 // these two functions are implemented in assembly
 extern void goback(uint32_t addr);     // debug function to jump back to assembly and we can go to a faulted instruction
@@ -31,9 +31,8 @@ void serial_init(void);
 
 // assembly routines to get didcrashp and baddrp
 extern uint32_t getbaddr(void);
-extern uint8_t  getdidcrash(void);
+extern uint8_t getdidcrash(void);
 extern int test(int var);
 
-
-
-
+// printing addresses
+char *addrtostring(uint32_t addr);

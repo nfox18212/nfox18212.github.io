@@ -114,6 +114,7 @@ globals:	.word 0x0
 	.global goback
 	.global crash
 	.global int2string
+	.global long2string
 
 sw1mask:	.equ	0xEF	; bitmask to mask out for SW1, pin 4
 sw1write:	.equ 	0x10	; bitmasks to write a 1 for SW1, pin 4
@@ -414,17 +415,17 @@ output_character:
 							; that are used in your routine.  include lr if this
 							; routine calls another routine.
 
-	mov  	r2, #0xc000		; this code left intentionally commented to remind me of wtf i'm doing in r2
-	movt 	r2, #0x4000
+	mov  	r6, #0xc000		; don't use a temp reg
+	movt	r6, #0x4000
 	mov		r4, #0x20
 							; looking for RxFF flag, offset 5 bits from #0x4000C018
 tloop:						; Transmit loop
-	ldrb	r1, [r2, #0x18] ; load flag reg to see if transmit buffer is full
-	and		r3, r1, #0x20  	; bitmask looking for 1 in last place, store in r3 to preserve flag reg
-	cmp		r3, r4			; checking bitmask
+	ldrb	r1, [r6, #0x18] ; load flag reg to see if transmit buffer is full
+	and		r7, r1, #0x20  	; bitmask looking for 1 in last place, store in r7 to preserve flag reg
+	cmp		r7, r4			; checking bitmask
 	beq		tloop			; if flag reg contains 1, loop
 							; now we need to store r0 in data reg
-	strb 	r0, [r2, #0]	; no offset needed, storing r0 into data reg
+	strb 	r0, [r6, #0]	; no offset needed, storing r0 into data reg
 
 
 	pop {r4-r12,lr}   		; restore registers all registers preserved in the
@@ -629,15 +630,17 @@ read_character:
 							; that are used in your routine.  include lr if this
 							; routine calls another routine.
 	mov		r4, #0x10
+	mov		r8, #0xc000
+	movt	r8, #0x4000
 							; looking for RxFE flag, which is stored at 0x4000C018
 rloop:						; Recieve loop
-	; TODO: something's fishy in this subroutine
-	ldrb	r1, [r2, #0x18] ; first thing is to check flag reg to see if buffer is full, r2 contains first half, u0frRF is offset of 4
+
+	ldrb	r1, [r8, #0x18] ; first thing is to check flag reg to see if buffer is full, r2 contains first half, u0frRF is offset of 4
 	and		r3, r1, #0x10  	; bitmask looking for 1 in last place, store in r3 to preserve flag reg
 	cmp		r3, r4			; check to see if flag reg is 0 or 1 - if 1, loop
 	beq		rloop			; if flag reg contains 1, loop
 							; now there should be data to read
-	ldrb 	r0, [r2, #0]	; no offset needed, just load data reg into r0 and return from program
+	ldrb 	r0, [r8, #0]	; no offset needed, just load data reg into r0 and return from program
 
 	pop {r4-r12,lr}   		; restore registers all registers preserved in the
 							; push at the top of this routine from the stack.
@@ -649,7 +652,6 @@ int2string:
 	push {r4-r12,lr} 		; store any registers in the range of r4 through r12
 							; that are used in your routine.  include lr if this
 							; routine calls another routine.
-
 
 	mov		r5, r0			; preserve the address in r0
 	mov		r9, r1			; preserve original number in r6
@@ -708,15 +710,18 @@ two_digits:
 one_digit:
 
 	; unlike the other two times, if we only have 1 digit then we just add it to r8
-	add		r0, r0, #0x30
-	add		r8, r8, r0
+	add			r8, r0, #0x30
+	;add		r0, r0, #0x30
+	;add		r8, r8, r0
 	; no need for shifting
 
 	; now at this point, given 435 with negative flag, r8 would look like: 0x2D343335 or "534-" because endianness.
 	; rotate by 1 byte 3 times to fix
-	ror		r8, r8, #8
-	ror		r8, r8, #8
-	ror		r8, r8, #8		; no, rotating once by 24 bits is NOT the same thing
+	cmp		r1, #1	; we have one digit, don't do any rotation nonsense
+	ittt	ne
+	rorne	r8, r8, #8
+	rorne	r8, r8, #8
+	rorne	r8, r8, #8		; no, rotating once by 24 bits is NOT the same thing
 
 	; now we can just store it
 	str		r8, [r5, #0] 	; address will still be in r5
@@ -747,6 +752,37 @@ uart_interrupt_init:
 
 	MOV pc, lr
 
+long2string:
+	; int2string but expanded for one full register
+	; r0: string to store long in
+	; r1: long to print
+	push	{r4-r12,lr}
+
+	mov		r9, r0	 	; iterate using r9 to preserve value of r0
+	mov		r6, #0x30	; ascii 0
+	strb	r6, [r9], #1; post indexed to move r9
+	mov		r6, #0x78	; ascii x
+	strb	r6, [r9], #1
+
+	mov		r10, #0		; shift iterator
+	mov		r11, #0		; strlen iterator
+	mov		r4, #0xF 	; iterate through all 8 nibbles
+l2sloop:
+	add		r10, r10, #4; increment by 4 each time
+	add		r11, r11, #1; increment by 1 each time
+	and		r5, r4, r1 	; get first value
+	lsl		r4, r4, #4	; shift by one nibble
+	; r5 might be something like 0x0A00, shift it back
+	lsr		r5, r5, r10
+	cmp		r5, #0xA	; is r5 >= A?
+	ite	ge
+	addge	r5, r5, #0x37; 0xA -> 'A' is difference of 0x37
+	addlt	r5, r5, #0x30; 0x1 -> '1' is difference of 0x30
+	strb	r5, [r9], #1
+	cmp		r11, #7		 ; if we've done this 7 times, break
+	bne		l2sloop
+
+	pop		{r4-r12,lr}
 
 gpio_interrupt_init:
 

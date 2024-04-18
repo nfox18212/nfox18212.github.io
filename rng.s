@@ -1,4 +1,4 @@
-
+	.cdecls C,NOLIST,"debug.h"
     .data
 
 colorlist:	.word 0x01010101 ; 4 1s
@@ -30,6 +30,7 @@ colorlistp:    .word    colorlist
     .global get_cell
     .if dbg=1
     .global output_string
+    .global output_character
     .global int2string
     .endif
 
@@ -48,28 +49,38 @@ seed:
 	ldr		r6, colorlistp		; pointer to color list
 
 rngloop:
+	; TODO: Fix the color swapping in this subroutine
 	; r0, r1 - contains index1 and colorlist[index1]
 	; r2, r3 - contains index2 and colorlist[index2]
     and     r0, r7, #6      ; look for last 6 bits - this is index 1
     bl      reduce          ; make sure its less than 54
+
     .if dbg=1
+    push	{r0-r4}
     ; for debug: print idx contents
     mov		r1, r0
     ldr		r0, idxstrp
     bl		int2string
     bl		output_string
-    mov		r0, r1 ; restore r0
+    mov		r0, #0x20
+    bl		output_character
+    pop		{r0-r4}
     .endif
-	push	{r0}			; backup r0
+
+	push	{r0}			; backup r0 to preserve index 1
     ror     r0, r0, #29   	; shuffle those bits around - this is index 2
 	bl		reduce			; make sure its less than 54
 	mov		r2, r0			; make sure index 2 is in r2
+
 	.if dbg=1
+	push	{r0-r4}
 	ldr		r0, idxstrp
 	mov		r1, r2
 	bl		int2string
 	bl		output_string
+	pop		{r0-r4}
 	.endif
+
 	pop		{r0}			; get index 1
 	ldrb	r1, [r6, r0]	; load colorlist[index1]
 	ldrb	r3, [r6, r2]	; load colorlist[index2]
@@ -79,13 +90,17 @@ rngloop:
 	; make seed more "random" using xorshift psuedo-random number generation
 	; seed is in r7
 	lsr		r8, r7, #7
-	eor		r7, r8, r7		; seed ^= seed >> 7
+	sub		r8, r8, #7		; just to make sure the last bit is changed
+	eor		r7, r8, r7		; seed ^= (seed >> 7)-7
 	lsl		r8, r7, #13
-	eor		r7, r8, r7		; seed ^= seed << 13
+	add		r8, r8, #13
+	eor		r7, r8, r7		; seed ^= (seed << 13) + 13
 	lsr		r8, r7, #5
-	eor		r7, r8, r7		; seed ^= seed >> 5
+	sub		r8, r8, #5
+	eor		r7, r8, r7		; seed ^= (seed >> 5) - 5
 	lsr		r8, r7, #9
-	eor		r7, r8, r7		; seed ^= seed << 9
+	add		r8, r8, #9
+	eor		r7, r8, r7		; seed ^= (seed << 9) + 9
 	; since its just in one register, it'll automatically be 32 bits
 	
 	sub 	r10, r10, #1	; decrement number of iterations
