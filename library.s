@@ -628,7 +628,7 @@ read_character:
 							; that are used in your routine.  include lr if this
 							; routine calls another routine.
 	mov		r4, #0x10
-							; looking for RxFE flag, which is stored at 0x4000C01C
+							; looking for RxFE flag, which is stored at 0x4000C018
 rloop:						; Recieve loop
 	; TODO: something's fishy in this subroutine
 	ldrb	r1, [r2, #0x18] ; first thing is to check flag reg to see if buffer is full, r2 contains first half, u0frRF is offset of 4
