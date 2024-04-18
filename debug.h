@@ -10,6 +10,7 @@
 
 // these two functions are implemented in assembly
 extern void goback(uint32_t addr);     // debug function to jump back to assembly and we can go to a faulted instruction
+extern void ngoback(uint32_t addr);    // debug function to jump back to assembly if we encounter a fault that was not casued by the crash subroutine
 extern void output_string(char *str);  // print to uart
 extern void output_character(char a);
 
@@ -31,6 +32,7 @@ void serial_init(void);
 // assembly routines to get didcrashp and baddrp
 extern uint32_t getbaddr(void);
 extern uint8_t  getdidcrash(void);
+extern int test(int var);
 
 
 

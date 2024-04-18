@@ -16,20 +16,28 @@ colorlist:	.word 0x01010101 ; 4 1s
 			.word 0x06060606 ; 7 6s
 			.word 0x06060000 ; 9 6s and null termination
 
+idxstr:		.cstring "    "
+
 	.global seeddata
 	.global	colorlist
 	.global cells
     .text
-
+dbg:			.set	1
 colorlistp:    .word    colorlist
 
     .global seed
     .global set_color
     .global get_cell
+    .if dbg=1
+    .global output_string
+    .global int2string
+    .endif
 
 
 seeddatap:	.word 	seeddata
 cellp:		.word 	cells
+idxstrp:	.word 	idxstr
+
 
 seed:
     push    {r4-r12, lr}
@@ -44,10 +52,24 @@ rngloop:
 	; r2, r3 - contains index2 and colorlist[index2]
     and     r0, r7, #6      ; look for last 6 bits - this is index 1
     bl      reduce          ; make sure its less than 54
+    .if dbg=1
+    ; for debug: print idx contents
+    mov		r1, r0
+    ldr		r0, idxstrp
+    bl		int2string
+    bl		output_string
+    mov		r0, r1 ; restore r0
+    .endif
 	push	{r0}			; backup r0
     ror     r0, r0, #29   	; shuffle those bits around - this is index 2
 	bl		reduce			; make sure its less than 54
 	mov		r2, r0			; make sure index 2 is in r2
+	.if dbg=1
+	ldr		r0, idxstrp
+	mov		r1, r2
+	bl		int2string
+	bl		output_string
+	.endif
 	pop		{r0}			; get index 1
 	ldrb	r1, [r6, r0]	; load colorlist[index1]
 	ldrb	r3, [r6, r2]	; load colorlist[index2]

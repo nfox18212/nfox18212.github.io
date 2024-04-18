@@ -158,7 +158,8 @@ crash:
 
     ;; custom crash string in r0
     .if en_uart_out=1
-	clc
+	;clc
+	newl
 	bl		output_string
     .endif
 
@@ -174,10 +175,19 @@ crash:
 
 goback:	
 	; if need be, there's also baddrp so if this doesn't work we can grab it from there
-	push	{r3}		; p reserve r3 so we can use it as a temporary register
+	;push	{r3,r4}		; preserve r3/4 so we can use it as a temporary register
+	;ldr		r3, didcrashp
+	;ldr		r4, [r3]	; find out if the crash was caused by the crash subroutine
+	;mov		r3, r4		; restore r4
+	;pop		{r4}
+	;cmp		r3, #1
+	;bne		ngoback
+
+	push	{r3}
 	ldr		r3, caddrp
 	ldr		r0, [r3, #0] ; get the caddr address - to restore context
 	ldmea	r0!, {r4-r12,lr} ; restore registers
+	; above line is broken
 	mov		r3, r0 			 ; copy r0 into r3 to restore r0, r1 and r2
 	ldmea 	r3!, {r0-r2}	 ; restore r0, r1, and r2 
 	pop		{r3}			 ; restore r3
@@ -185,6 +195,14 @@ goback:
 	sub		lr, lr, #8		; ho-ly this is unsafe
 	mov		pc, lr 			; we've preserved lr so goto it
 
+ngoback:
+	; we can't assume we can restore context.  just return to address that faulted
+	sub		r0, r0, #4		; reduce address by 4 to return to instruction before faulted instruction
+	bx		r0
 
+test:
+	; test to see if its possible to return a value to C and take in a value from C
+	add		r0, r0, #5
+	bx		lr
 
 	.end

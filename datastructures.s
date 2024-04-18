@@ -247,29 +247,29 @@ rcd:
 		; now mask based on direction
 rcdAfter_if:
 
-	ldr		r5, rcdtabp
+	ldr		r5, rcd2tabp
 	; use new rcdtab because its simpler
 
 	; now we only need to load one byte. calculate the offset
 	; TODO: reformat rcdtab to make it simpler and prevent valid characters from crashing
 	cmp		r1, #0x77		; w - up
 	it		eq
-	addeq	r4, r4, #0		
+	addeq	r4, r4, #1
 	beq		rcdAfter_if2
 
 	cmp		r1, #0x61		; a - left
 	it		eq
-	addeq	r4, r4, #1
+	addeq	r4, r4, #2
 	beq		rcdAfter_if2
 
 	cmp		r1, #0x73		; s - down
 	it		eq
-	addeq	r4, r4, #2
+	addeq	r4, r4, #3
 	beq		rcdAfter_if2
 
 	cmp		r1, #0x64		; d - right
 	it		eq
-	addeq	r4, r4, #3
+	addeq	r4, r4, #4
 	beq		rcdAfter_if2
 
 	; if we encounter an invalid character, crash

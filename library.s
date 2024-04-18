@@ -113,6 +113,7 @@ globals:	.word 0x0
 	.global gpio_interrupt_init
 	.global goback
 	.global crash
+	.global int2string
 
 sw1mask:	.equ	0xEF	; bitmask to mask out for SW1, pin 4
 sw1write:	.equ 	0x10	; bitmasks to write a 1 for SW1, pin 4
@@ -649,8 +650,9 @@ int2string:
 							; that are used in your routine.  include lr if this
 							; routine calls another routine.
 
-							; your code for your int2string routine is placed here
+
 	mov		r5, r0			; preserve the address in r0
+	mov		r9, r1			; preserve original number in r6
 	mov		r0, r1			; copy the number we're given into r0
 	and		r8, r8, #0		; clear r8, use this to contain the string - WE CAN CONTAIN THE WHOLE STRING IN ONE REG!
 	; now we need to determine the number of digits, we can do it by comparing to 99 and 9
@@ -673,13 +675,13 @@ skip:
 	addeq	r8, r8, #0x2D	; 0x2D is hex for -
 	lsleq	r8, #8			; shift it by one byte, the smallest byte should be zero
 
-	cmp		r4, #3			; check to see if we have three digits
+	cmp		r1, #3			; check to see if we have three digits
 	beq		three_digits	; if so, handle everything in three_digits.  repeat for 2 and 1
 
-	cmp		r4, #2
+	cmp		r1, #2
 	beq		two_digits
 
-	cmp		r4, #1
+	cmp		r1, #1
 	beq		one_digit
 
 
@@ -718,7 +720,8 @@ one_digit:
 
 	; now we can just store it
 	str		r8, [r5, #0] 	; address will still be in r5
-
+	mov		r0, r5			; restore address to r0
+	mov		r1, r9			; restore original int to r1
 
 	pop {r4-r12,lr}   		; restore registers all registers preserved in the
 							; push at the top of this routine from the stack.

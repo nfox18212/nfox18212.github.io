@@ -30,6 +30,12 @@ void normalfault(void) {
   uint32_t badaddr = 0; // where the bad address will be stored
   volatile void *cfsr = (volatile void *)0xE000ED28;  // address of the configurable fault status register, can get further information from bitmasking this
 
+  char* msg = "FAULT OCCURRED!!!  HANDLING FAULT!!!\r\n";
+  output_string(msg);
+
+  int testv = 4;
+  testv = test(testv);
+
   uint32_t mmsr = (*(uint32_t *)cfsr) & (uint32_t)0xFF;        // memfault status register is only 1 byte in size
   uint32_t bfsr = (*(uint32_t *)cfsr) & (uint32_t)0xFF00;      // bus fault status reg also one byte in size, at 0xE000ED29, shift bitmask
   uint32_t ufsr = (*(uint32_t *)cfsr) & (uint32_t)0xFFFF0000;  // usage fault status reg is upper halfword, mask for just that
@@ -51,13 +57,20 @@ void normalfault(void) {
     ufsrprint(ufsr);
   }
 
+//  // there's some stupid scoping stuff going on
+//  if(badaddr == 0){
+//	  badaddr = *(uint32_t *) badaddrp;
+//  }
+
   // make sure baddr is actually valid
-  if(badaddr - 0xFFFFFFFF < 0xF){
+  if(badaddr > 0x2F000000){
+	  char* baddrmsg = "Determined the given address is invalid\r\n";
+	  output_string(baddrmsg);
 	  cangoback = false;
   }
 
   if (cangoback) {
-    goback(badaddr);  // goes back to assembly passing in the bad address
+	  ngoback(badaddr);  // goes back to assembly passing in the bad address
   }
 
   // if we get here, we can't go back.
