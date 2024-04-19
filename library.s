@@ -76,6 +76,8 @@ restartprompt	.cstring "Would you like to restart? y or n: "
 
 negFlag:  .byte 0
 
+	.text
+
 ptr_to_nprompt:			.word numPrompt
 ptr_to_dprompt:			.word demPrompt
 ptr_to_numerator:		.word dividend
@@ -96,8 +98,6 @@ ptr_to_restart:			.word restartprompt
 
 globals:	.word 0x0
 
-	.text
-	
 	.global uart_init
 	.global init
 	.global output_character
@@ -594,9 +594,6 @@ divloop:					; this section is where we actually do the divison loop
 	mov pc, lr
 
 
-
-
-
 r0ltr1:
 	mov		r1, r0		; copy r0 into r1
 	mov		r0, #0 		; copy a zero into r0
@@ -636,8 +633,8 @@ read_character:
 rloop:						; Recieve loop
 
 	ldrb	r1, [r8, #0x18] ; first thing is to check flag reg to see if buffer is full, r2 contains first half, u0frRF is offset of 4
-	and		r3, r1, #0x10  	; bitmask looking for 1 in last place, store in r3 to preserve flag reg
-	cmp		r3, r4			; check to see if flag reg is 0 or 1 - if 1, loop
+	and		r5, r1, #0x10  	; bitmask looking for 1 in last place, store in r5 to preserve flag reg
+	cmp		r5, r4			; check to see if flag reg is 0 or 1 - if 1, loop
 	beq		rloop			; if flag reg contains 1, loop
 							; now there should be data to read
 	ldrb 	r0, [r8, #0]	; no offset needed, just load data reg into r0 and return from program
@@ -649,31 +646,35 @@ rloop:						; Recieve loop
 
 
 int2string:
-	push {r4-r12,lr} 		; store any registers in the range of r4 through r12
+	; limitation: only will work for numbers with at most 3 digits.
+	push 	{r4-r12,lr} 	; store any registers in the range of r4 through r12
 							; that are used in your routine.  include lr if this
 							; routine calls another routine.
-
 	mov		r5, r0			; preserve the address in r0
 	mov		r9, r1			; preserve original number in r6
 	mov		r0, r1			; copy the number we're given into r0
 	and		r8, r8, #0		; clear r8, use this to contain the string - WE CAN CONTAIN THE WHOLE STRING IN ONE REG!
 	; now we need to determine the number of digits, we can do it by comparing to 99 and 9
 	cmp		r1, #99			; if its greater than 99, then it has to be 3 digits in size
-	itt		gt				; if-then-then block based on it being greater than 99
+	ittt	gt				; if-then-then block based on it being greater than 99
+	movgt	r10, #1
 	movgt	r4, #3
 	bgt		skip			; skip the rest of the checks
 
 	cmp		r1, #9			; if its greater than 9, it must be 2 digits.  if its not, then it must be one digit
-	ite	gt
+	itte	gt
+	movgt	r10, #1			; >1 byte flag
 	movgt	r1, #2
 	movle	r1, #1
 
 skip:
 
+	; neg flag
 	ldr		r7, ptr_to_negFlag; we need to know if we have a negative number
 	ldrb	r6, [r7, #0]
 	cmp		r6, #1			; so if it is, then add 0x2D into r8 and shift it
-	itt		eq
+	ittt	eq
+	moveq	r10, #1
 	addeq	r8, r8, #0x2D	; 0x2D is hex for -
 	lsleq	r8, #8			; shift it by one byte, the smallest byte should be zero
 
@@ -710,18 +711,17 @@ two_digits:
 one_digit:
 
 	; unlike the other two times, if we only have 1 digit then we just add it to r8
-	add			r8, r0, #0x30
-	;add		r0, r0, #0x30
-	;add		r8, r8, r0
+	add			r0, r0, #0x30
+	add			r8, r8, r0
 	; no need for shifting
 
-	; now at this point, given 435 with negative flag, r8 would look like: 0x2D343335 or "534-" because endianness.
-	; rotate by 1 byte 3 times to fix
-	cmp		r1, #1	; we have one digit, don't do any rotation nonsense
-	ittt	ne
-	rorne	r8, r8, #8
-	rorne	r8, r8, #8
-	rorne	r8, r8, #8		; no, rotating once by 24 bits is NOT the same thing
+	; now at this point, given 435 with negative flag, r8 would look like: 0x2D343335 or "534-" because endianness. fix with rev instruction
+	cmp		r10, #1	; reverse byte order only if we have more than one character to print
+	itttt	eq
+	clzeq	r11, r8	; figure out the number of leading zeros in r8 and store in r11 - eg, 0x3430 has 18 leading zeros
+	subeq	r11, r11, #2 ; the amount we want to shift will be the leading zeros minus 2 to make it a printable string
+	reveq	r8, r8
+	lsreq	r8, r8, r11
 
 	; now we can just store it
 	str		r8, [r5, #0] 	; address will still be in r5
@@ -732,25 +732,7 @@ one_digit:
 							; push at the top of this routine from the stack.
 	mov pc, lr
 
-uart_interrupt_init:
 
-
-
-	; Your code to initialize the UART0 interrupt goes here
-
-	mov 	r1, #0xC000		; UARTIM base address
-	movt 	r1, #0x4000
-	ldr 	r0, [r1, #0x38]	; UARTIM offset
-	ORR 	r0, r0, #0x10	; set RXIM pin 4
-	str 	r0, [r1, #0x38]	; store set pin
-
-	mov 	r1, #0xE000		; e0 base address
-	movt 	r1, #0xE000
-	ldr 	r0, [r1, #0x100]	; load offset
-	ORR 	r0, r0, #0x20	; set bit 5 to 1
-	str 	r0, [r1, #0x100]	; store change
-
-	MOV pc, lr
 
 long2string:
 	; int2string but expanded for one full register
@@ -821,5 +803,23 @@ gpio_interrupt_init:
 
 	pop		{r4-r11,lr}
 	mov		pc, lr
+
+uart_interrupt_init:
+
+	; Your code to initialize the UART0 interrupt goes here
+
+	mov 	r1, #0xC000		; UARTIM base address
+	movt 	r1, #0x4000
+	ldr 	r0, [r1, #0x38]	; UARTIM offset
+	ORR 	r0, r0, #0x10	; set RXIM pin 4
+	str 	r0, [r1, #0x38]	; store set pin
+
+	mov 	r1, #0xE000		; e0 base address
+	movt 	r1, #0xE000
+	ldr 	r0, [r1, #0x100]	; load offset
+	ORR 	r0, r0, #0x20	; set bit 5 to 1
+	str 	r0, [r1, #0x100]	; store change
+
+	MOV pc, lr
 
 	.end

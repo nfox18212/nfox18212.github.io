@@ -262,7 +262,6 @@ UART0_Handler:
 	str		r0, [r1, #0x100]
 
 	bl		read_character			; grab current character and store it in r0
-
 	; validate r0, make sure its w, a, s or d
 	; if its not, just exit handler
 

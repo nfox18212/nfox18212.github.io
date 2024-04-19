@@ -251,7 +251,6 @@ rcdAfter_if:
 	; use new rcdtab because its simpler
 
 	; now we only need to load one byte. calculate the offset
-	; TODO: reformat rcdtab to make it simpler and prevent valid characters from crashing
 	cmp		r1, #0x77		; w - up
 	it		eq
 	addeq	r4, r4, #1

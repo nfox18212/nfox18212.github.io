@@ -1,4 +1,21 @@
 	.cdecls C,NOLIST,"debug.h"
+
+newl .macro				; print a newline
+	push 	{r0}
+	mov		r0, #0xD
+	bl		output_character
+	mov		r0, #0xA
+	bl		output_character
+	pop		{r0}
+	.endm
+
+spc .macro
+	push	{r0}
+	mov		r0, #0x2D ; ascii space
+	bl		output_character
+	pop		{r0}
+	.endm
+
     .data
 
 colorlist:	.word 0x01010101 ; 4 1s
@@ -42,9 +59,11 @@ idxstrp:	.word 	idxstr
 
 seed:
     push    {r4-r12, lr}
-
     ldr     r4, seeddatap
-    ldr     r7, [r4, #0]        ; this is the initial seed
+    ; ldr     r7, [r4, #0]        ; this is the initial seed
+	; use test seed
+	mov		r7, #0x59DF
+	movt	r7, #0x5F37			; if you get the reference, you get +100 points
     mov     r10, #1000          ; r10 will be the number of iterations
 	ldr		r6, colorlistp		; pointer to color list
 
@@ -62,8 +81,7 @@ rngloop:
     ldr		r0, idxstrp
     bl		int2string
     bl		output_string
-    mov		r0, #0x20
-    bl		output_character
+	spc
     pop		{r0-r4}
     .endif
 
@@ -78,6 +96,7 @@ rngloop:
 	mov		r1, r2
 	bl		int2string
 	bl		output_string
+	newl
 	pop		{r0-r4}
 	.endif
 
@@ -90,17 +109,13 @@ rngloop:
 	; make seed more "random" using xorshift psuedo-random number generation
 	; seed is in r7
 	lsr		r8, r7, #7
-	sub		r8, r8, #7		; just to make sure the last bit is changed
-	eor		r7, r8, r7		; seed ^= (seed >> 7)-7
+	eor		r7, r8, r7		; seed ^= (seed >> 7)
 	lsl		r8, r7, #13
-	add		r8, r8, #13
-	eor		r7, r8, r7		; seed ^= (seed << 13) + 13
+	eor		r7, r8, r7		; seed ^= (seed << 13) 
 	lsr		r8, r7, #5
-	sub		r8, r8, #5
-	eor		r7, r8, r7		; seed ^= (seed >> 5) - 5
+	eor		r7, r8, r7		; seed ^= (seed >> 5) 
 	lsr		r8, r7, #9
-	add		r8, r8, #9
-	eor		r7, r8, r7		; seed ^= (seed << 9) + 9
+	eor		r7, r8, r7		; seed ^= (seed << 9)
 	; since its just in one register, it'll automatically be 32 bits
 	
 	sub 	r10, r10, #1	; decrement number of iterations

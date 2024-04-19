@@ -34,65 +34,52 @@ def initColorOrder():
     for i in range(9):
         colorOrder.append(6)
 
+def red(num):
+    newnum = num
+    while(newnum > 53):
+        newnum ^= 0x33
+        newnum = newnum >> 1
+    return newnum
+
 def swap(idx):
-    idx2 = ror(idx, 0x1D)
-    idx1 = idx
-    # print(f"idx1 = {hex(idx)}, idx2 = {hex(idx2)}")
-    while(idx2 > 0x35):
-        idx2 = idx2 ^ 0x33
-        idx2 = idx2 >> 1
-    # print(f"idx1 = {hex(idx)}, idx2 = {hex(idx2)}")
+
+    # make sure index isn't greater than the color list
+    idx1 = red(idx)
+    idx2 = red(ror(idx, 29))
+
+    # fstr = f"idx1 = {hex(idx)}, idx2 = {hex(idx2)}"
+    fstr = f"idx1 = {idx1}, idx2 = {idx2}"
+    f.write(fstr+"\n")
+    print(fstr)
     color1 = colorOrder[idx1]
     color2 = colorOrder[idx2]
 
     colorOrder[idx1] = color2
     colorOrder[idx2] = color1
 
-def newSeed(oldSeed):
-    period = 0
-    lfsr = oldSeed & 0xFFFF # take nibble to improve performance
-    target = oldSeed & 0xFFFF
-    for _ in iter(int,1):
-        lfsr ^= lfsr >> 7
-        lfsr ^= lfsr << 9
-        lfsr ^= lfsr >> 13
-        # lfsr ^= lfsr << 5
-        lfsr &= 0xFFFF # make sure its a 16 bit number
-        period += 1
-        if(lfsr == target):
-            break
-    
-    return period
-
 global MAXB
 MAXB = 32
 
-# seed = time.time_ns()
 seed = 0x5f3759df
 
-# seed2 = newSeed(seed)
-# print(hex(seed2))
-
 global colorOrder
-colorOrder : List[int] = []
-# colorOrder = []
+colorOrder : list[int] = []
+
+global f
+f = open("scripts/xindices.txt","w")
 
 initColorOrder()
 
 for i in range(1000):
     idx = seed & 0x3F
-    # make sure index isn't greater than the color list
-    while(idx > 0x35):
-        idx = idx ^ 0x33
-        idx = idx >> 1
-
     swap(idx)
+
     seed ^= seed >> 7
     seed ^= seed << 13
     seed ^= seed >> 5
     seed ^= seed << 9
     seed &= 0xFFFFFFFF # force it to be 32 bits
-    print(hex(seed))
+    # print(hex(seed))
 
 print(colorOrder)
-
+f.close()
