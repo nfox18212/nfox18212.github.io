@@ -19,12 +19,12 @@ if('0x' in invar):
 
 else:
     out = args.invar.encode("utf-8").hex()
-    outlist = []
+    outlist : list[str] = []
     store = 0
 
     for i in range(len(out)):
         if(i != len(out)-1):
-            token = out[i] + out[i+1]
+            token : str = out[i] + out[i+1]
             i = i + 1
             store = store ^ 1
             if(store == 1):

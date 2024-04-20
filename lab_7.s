@@ -126,6 +126,10 @@ poll:							; temporary label
 	beq		poll				; will wait for uart interrupt to happen and resolve
 	
 	bl		seed
+
+	; see if the seed has colored the board
+	mov		r0, #0x65
+	bl		get_color
 	
 	; test detect_collision
 	mov		r0, #0x70	

@@ -31,7 +31,7 @@ colorlist:	.word 0x01010101 ; 4 1s
 			.word 0x05050505 ; 8 5s
 			.word 0x05060606 ; 9 5s, 3 6s
 			.word 0x06060606 ; 7 6s
-			.word 0x06060000 ; 9 6s and null termination
+			.word 0x00FF0606 ; 9 6s and null termination
 
 idxstr:		.cstring "    "
 
@@ -39,7 +39,7 @@ idxstr:		.cstring "    "
 	.global	colorlist
 	.global cells
     .text
-dbg:			.set	1
+dbg:			.set	0
 colorlistp:    .word    colorlist
 
     .global seed
@@ -68,11 +68,10 @@ seed:
 	ldr		r6, colorlistp		; pointer to color list
 
 rngloop:
-	; TODO: Fix the color swapping in this subroutine
 	; r0, r1 - contains index1 and colorlist[index1]
 	; r2, r3 - contains index2 and colorlist[index2]
-    and     r0, r7, #6      ; look for last 6 bits - this is index 1
-    bl      reduce          ; make sure its less than 54
+    and     r0, r7, #0x3F		; look for last 6 bits, 0b00111111 = 0x3F - this is index 1 
+    bl      reduce				; make sure its less than 54
 
     .if dbg=1
     push	{r0-r4}
@@ -104,7 +103,7 @@ rngloop:
 	ldrb	r1, [r6, r0]	; load colorlist[index1]
 	ldrb	r3, [r6, r2]	; load colorlist[index2]
 	strb	r3, [r6, r0]	; store colorlist[index2] into colorlist[index1] - swap the bytes
-	strb	r1, [r6, r2]
+	strb	r1, [r6, r2]	; store colorlist[index1] into colorlist[index12 - swap the bytes
 
 	; make seed more "random" using xorshift psuedo-random number generation
 	; seed is in r7
@@ -122,8 +121,6 @@ rngloop:
 	cmp		r10, #0
 	bne		rngloop			; if we've hit zero, fill the alist with the colors
 
-	mov		r2, r6			; move colorlist addr to r0 to easily iterate through it
-	ldr		r3, cellp
 	bl		fill_alist
 
     pop     {r4-r12, lr}
@@ -131,7 +128,7 @@ rngloop:
 
 
 reduce: ; can't be a macro bc of loop
-    cmp    	r0, #54
+    cmp    	r0, #53
     ittte  	ge
     eorge  	r0, r0, #0x33
     lsrge  	r0, #1
@@ -141,17 +138,17 @@ reduce: ; can't be a macro bc of loop
 
 fill_alist:
 	push	{r4-r12, lr}
-	mov		r4, #0xFF		; stop byte
+	ldr		r7, cellp 		; get the cell pointer 
 fill_alist_L:
-	; actually iterates through the color_list to put the colors into it
-	ldrb	r1, [r2], #1	; post-indexed by 1 byte to iterate through the color list for each color
-	ldrb	r0, [r2], #2	; post indexed by 2 to iterate through cell list
-	cmp		r0, r4			; make sure its not the end of the cell list
+	; actually iterates through the color_list to put the colors the alist
+	ldrb	r1, [r6], #1	; post-indexed by 1 byte to iterate through the color list for each color
+	ldrh	r0, [r7], #2	; post indexed by 2 to iterate through cell list
+	cmp		r0, #0xFF		; make sure its not the end of the cell list by checking for stop byte 0xFF
 	it		ne
 	blne	set_color		; set the color from the color list
 	bne		fill_alist_L
 	; exit if we hit lr
 	pop		{r4-r12, lr}
-	mov		pc, lr			; if we hit the 0xFFFF byte, return
+	mov		pc, lr			; if we hit the 0xFF byte, return
 
 	
