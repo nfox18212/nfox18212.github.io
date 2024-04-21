@@ -125,19 +125,21 @@ poll:							; temporary label
 	cmp		r5, #1				; will be used to indicate to we should create the seed
 	beq		poll				; will wait for uart interrupt to happen and resolve
 	
+	; something strange is going on with set_color, test it
+	mov		r0, #100			; set CID to 100
+	mov		r1, #1				; set color to 1 (red)
+	bl		set_color
+	; now test it
+	mov		r0, #100
+	bl		get_color
+	
 	bl		seed
 
 	; see if the seed has colored the board
 	mov		r0, #0x65
 	bl		get_color
 	
-	; test detect_collision
-	mov		r0, #0x70	
-	mov		r1, #0x6			; make cell 112 blue
-	bl		set_color
 
-	; the player is blue by default
-	bl		detect_collision
 	nop
 
 

@@ -9,7 +9,6 @@
 #define newline 0xDA     // carriage return and newline
 
 
-
 // these two functions are implemented in assembly
 extern void goback(uint32_t addr);     // debug function to jump back to assembly and we can go to a faulted instruction
 extern void ngoback(uint32_t addr);    // debug function to jump back to assembly if we encounter a fault that was not casued by the crash subroutine

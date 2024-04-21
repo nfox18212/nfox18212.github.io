@@ -1,3 +1,5 @@
+	.cdecls C,NOLIST,"debug.h"
+
 clc .macro
 	push	{r0}
 	mov		r0, #clear	; form feed
@@ -28,19 +30,6 @@ psixtyspaces .macro
 	pop		{r0}
 	.endm
 ; these macros exist to print whitespace out.  Exactly 60 and 80 spaces, and they both preserve r0
-calculate_offset .macro xpos, ypos, offset
-	; leaf macro,  offset = 22*ypos + xpos
-	push	{r4,r5}
-	mov		r5, #22
-	mul		r4, ypos, r5
-	add		offset, r4, xpos
-	pop		{r4,r5}
-	.endm
-
-add3 .macro P1, P2, P3, ADDRP ; debug macro
-	ADD ADDRP, P1, P2
-	ADD ADDRP, ADDRP, P3
-	.endm
 
 .data
 
@@ -119,10 +108,9 @@ globals:	.word 0x0
 sw1mask:	.equ	0xEF	; bitmask to mask out for SW1, pin 4
 sw1write:	.equ 	0x10	; bitmasks to write a 1 for SW1, pin 4
 uartwrite:	.equ	0x20
-clear:		.equ	0xC		; form feed, new page
-newline:	.equ	0xA
-return:		.equ	0xD		; carriage return
 star:		.equ	0x2A	; * - the asterisk
+
+newdm:		.set 	1
 
 init:
 	push	{r4-r12,lr}
@@ -351,7 +339,9 @@ gpio_init:
 	ldrb	r1, [r0, #0x51C]
 	orr		r1, r1, #0x0F		; we want to enable all 4 bits, which is done with 0b1111 = #0xF
 	strb	r1, [r0, #0x51C]	; enable pins for digital i/o
-	; don't need to configure pull-up resistors
+	; don't need to configure pull-up re 		; store any registers in the range of r4 through r12
+							; that are used in your routine.  include lr if this
+							; routine calls another routine.sistors
 
 
 
@@ -435,10 +425,7 @@ tloop:						; Transmit loop
 
 
 output_string:
-	push {r4-r12,lr} 		; store any registers in the range of r4 through r12
-							; that are used in your routine.  include lr if this
-							; routine calls another routine.
-
+	push {r4-r12,lr}
 							; your code for your output_string routine is placed here
 	mov		r5, r0			; copy r0 into r5 to back it up
 	; i don't actually need to do that, just use post-indexing loads instead
@@ -448,7 +435,6 @@ str_out_loop:
 	bl		output_character; print said character
 	cmp		r0, #0			; check to see if the printed out character is a null byte or not
 	bne		str_out_loop	; if we did not print out a null byte, loop
-
 
 	pop {r4-r12,lr} 		; restore registers all registers preserved in the
 							; push at the top of this routine from the stack.
@@ -480,7 +466,6 @@ illuminate_LEDs:
 	strb	r0, [r1, #0x3FC]	; address of data reg
 	;; after this, there's not much that needs to be done
 
-
 	POP {r4-r12,lr}  	; Restore registers from stack
 	MOV pc, lr
 
@@ -501,8 +486,6 @@ illuminate_RGB_LED:
 	itt		eq						; If the least significant bit is 1, that means SW5 is pressed.
 	mvneq	r0, r0					; Since there isn't a 4th color, if SW5 is pressed invert all colors
 	andeq	r0, r0, #0xE			; masks out bits before the 3rd bit
-
-
 
 	POP {r4-r12,lr}  	; Restore registers from stack
 	MOV pc, lr
@@ -536,9 +519,6 @@ change_color:
 						; left once turns it onto 0b0100, which turns it into something we can write to the datareg
 
 
-
-
-
 	POP {r4-r12,lr}  	; Restore registers from stack
 	MOV pc, lr
 
@@ -563,20 +543,16 @@ read_loop:
 
 	POP {r4-r12,lr}  			; Restore registers from stack
 	MOV pc, lr
-div_and_mod:
+
+	.if newdm=0
+div_and_mod: ; old version
 	push {r4-r12,lr} 	; store any registers in the range of r4 through r12
 						; that are used in your routine.  include lr if this
 						; routine calls another routine.
-
-
 						; your code for the div_and_mod routine goes here.
 	and		r2, r2, #0	; clear r2, used for iterator
-
 						; movt comes first to deal with negatives
-
 						; we need to test to see if the denominator is greater than the numerator, eg 2/5 - both reg need to be positive
-
-
 	cmp		r0, r1		; is r0 < r1?
 	blt		r0ltr1		; if so, branch to r0ltr1 which handles this case
 
@@ -592,6 +568,39 @@ divloop:					; this section is where we actually do the divison loop
 	pop {r4-r12,lr}   	; restore registers all registers preserved in the
 						; push at the top of this routine from the stack.
 	mov pc, lr
+	.endif
+
+	.if newdm=1
+
+div_and_mod ; new version
+	; in1 = r0, in2 = r1.
+	push	{r4-r12,lr}
+	cmp		r0, r1
+	blt		r0ltr1
+	beq		r0eqr1
+
+	mov		r4, #1	; amount to multiply by
+	mov		r5, #0 	; clear r5
+dvmdl:
+	mls		r5, r1, r4, r0 ; r5 = r0 - (r1*r4)
+	add		r4, r4, #1
+	cmp		r5, r1			; is the result of the multiplication less than r1?  meaning, is in1 - (in2*r4) < y?  if so, we're done multiplying
+	bgt		dvmdl
+	; r5 is the remainder, r4 is the quotient
+	mov		r0, r4
+	mov		r1, r5
+
+	pop		{r4-r12,lr}
+	bx		lr
+	.endif
+
+r0eqr1:
+	; this is the case that in1 == in2
+	mov		r0, #1	; quotient is always 1
+	mov		r1, #0	; remainder is always 0
+
+	pop		{r4-r12, lr}
+	mov		pc, lr
 
 
 r0ltr1:
@@ -600,13 +609,8 @@ r0ltr1:
 	movt	r0, #0
 
 	pop {r4-r12,lr}   	; restore registers all registers preserved in the
-						; push at the top of this routine from the stack.
 	mov pc, lr
 
-
-	pop {r4-r12,lr}   	; restore registers all registers preserved in the
-						; push at the top of this routine from the stack.
-	mov pc, lr
 
 setNegFlag:
 	push {r4-r12,lr} 		; store any registers in the range of r4 through r12

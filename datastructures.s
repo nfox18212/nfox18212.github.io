@@ -1,3 +1,5 @@
+	.cdecls C,NOLIST,"debug.h"
+
 clc .macro
 	push	{r0}
 	mov		r0, #clear	; form feed
@@ -28,21 +30,6 @@ psixtyspaces .macro
 	pop		{r0}
 	.endm
 ; these macros exist to print whitespace out.  Exactly 60 and 80 spaces, and they both preserve r0
-calculate_offset .macro xpos, ypos, offset
-	; leaf macro,  offset = 22*ypos + xpos
-	push	{r4,r5}
-	mov		r5, #22
-	mul		r4, ypos, r5
-	add		offset, r4, xpos
-	pop		{r4,r5}
-	.endm
-
-add3 .macro P1, P2, P3, ADDRP ; debug macro
-	ADD ADDRP, P1, P2
-	ADD ADDRP, ADDRP, P3
-	.endm
-
-
 
 getclcrash:	.string "In get_cell a direction greater than 4 was specified, crashing program", 0xD, 0xA, 0x0
 
@@ -299,7 +286,9 @@ set_color:
 	orr		r0, r0, r4, lsl #12		; this adds the color into the cell contents
 	
 	ldr		r7, alistp 		; get the pointer to the alist
-	str		r0, [r7, r1]	; store the modified cell contents in the alist
+	strh	r0, [r7, r1]	; store the modified cell contents in the alist
+	mov		r11, #0xFFFF
+	strh	r11, [r7, r1] 	; data is not being stored?
 	; nothing else to do, return
 	
 	pop		{r4-r12,lr}
@@ -356,10 +345,14 @@ get_cell:
 	; if dir = 4, return the current cell from the table
 	; returns cell contents in r0, offset from alist to get to cell in r1
 	mov		r4, r1 		; backup the direction the character is facing
-
+	mov		r10, r0
 	bl		extract_cid
 	; now we have face in r0, row in r1, col in r2
-	; now calculate the formula
+	; prep for formula
+
+	mov		r6, #0
+	mov		r7, #0
+
 	; r6 will be used as the running sum when calculating offset
 	; Formula is correct
 	mov		r5, #90		; move for multiplication
@@ -388,8 +381,6 @@ get_cell:
 	; if r4 > 4, something has horribly wrong and crash the program
 	ldr		r0, getclcrashp ; custom crash string
 	bgt		crash
-	
-
 	
 	ldr		r5, alistp 		; grab ptr to alist
 	ldrh	r0, [r5, r6]	; grab cell contents using the calculated offset
