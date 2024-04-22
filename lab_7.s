@@ -404,6 +404,8 @@ swap:	; routine to swap player's color with current cell's color
 	ldr		r5, [r4, #0]	; get the player data
 	mov		r6, #0xFF0000	; filter for color data
 	and		r7, r6, r5		; player color is now in r7
+	sub		r5, r5, r7 		; remove color from playerdata
+	lsr		r7, r7, #16		; shift color to be one byte
 	
 	mov		r6, #0xFFFF		; filter for cell id
 	push	{r0}			; preserve r0 just in case
@@ -411,6 +413,8 @@ swap:	; routine to swap player's color with current cell's color
 	bl		get_color		; get the color
 
 	; swap player color and cell color
+	; put new color into player data
+	add		r5, r5, r0, lsl #16
 
 
 	pop		{r4-r11, lr}
