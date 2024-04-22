@@ -124,15 +124,6 @@ poll:							; temporary label
 	ldrb	r5, [r4, #0]
 	cmp		r5, #1				; will be used to indicate to we should create the seed
 	beq		poll				; will wait for uart interrupt to happen and resolve
-	
-	; something strange is going on with set_color, test it
-	mov		r0, #100			; set CID to 100
-	mov		r1, #1				; set color to 1 (red)
-	bl		set_color
-	; now test it
-	mov		r0, #100
-	bl		get_color
-	
 	bl		seed
 
 	; see if the seed has colored the board
@@ -159,7 +150,6 @@ detect_collision:
 
 	bl		get_color
 
-
 	cmp		r0, r5		; check to see if the colors are the same
 	ite		eq
 	moveq	r2, #1 		; if they are return 1, collision detected
@@ -180,8 +170,8 @@ move:
 	mov		r7, #0x0FFF		; the bit filter for grabbing position
 	and		r6, r5, r7		; get just position
 
-	mov		r7, #0x0000		; bit filer for orientation
-	movt	r7, #0xFF00		
+	
+	mov		r7, #0xFF000000		; bit filer for orientation
 	and		r7, r7, r5		; get the current orientation
 
 	ldr		r12, movp
@@ -286,6 +276,12 @@ UART0_Handler:
 	; d == 0x64
 	cmp		r0, #0x64
 	beq		cont_uart
+
+	; if a space was inputted
+	cmp		r0, #0x20
+	it		eq
+	bleq	swap
+	beq		exit_uart_handler
 
 	;		if its not wasd then exit handler
 	b		exit_uart_handler
@@ -400,6 +396,26 @@ change_timer:
 
 	pop		{r4-r11, lr}
 	mov		pc, lr
+
+swap:	; routine to swap player's color with current cell's color
+	push	{r4-r11, lr}
+
+	ldr		r4, playerdatap
+	ldr		r5, [r4, #0]	; get the player data
+	mov		r6, #0xFF0000	; filter for color data
+	and		r7, r6, r5		; player color is now in r7
+	
+	mov		r6, #0xFFFF		; filter for cell id
+	push	{r0}			; preserve r0 just in case
+	and		r0, r6, r5		; store cid in r0
+	bl		get_color		; get the color
+
+	; swap player color and cell color
+
+
+	pop		{r4-r11, lr}
+	bx		lr
+
 
 
 exit:

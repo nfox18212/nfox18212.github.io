@@ -94,9 +94,6 @@ set_color:
 
 	ldr		r7, alistp 		; get the pointer to the alist
 	strh	r0, [r7, r1]	; store the modified cell contents in the alist
-	mov		r11, #0xFFFF
-	movt	r11, #0xFFFF
-	strb	r11, [r7, #0] 	; data is not being stored?
 	; nothing else to do, return
 
 	pop		{r4-r12,lr}
