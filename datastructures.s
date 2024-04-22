@@ -46,6 +46,7 @@ fotab:		.byte 0x60, 0x01, 0x48, 0x24, 0x00, 0x5C
 			.byte 0x00 ; null terminator byte
  
 
+	.if separate_alist_file=1
 ; format described in docs
 ; simple description: first 4 bits are color, next 12 are the cell index.  0,1,2,3 are cardinal direction for East, South, North, West and other cell indexes.
 alist:		
@@ -104,7 +105,7 @@ alist:
 			.byte 0x6D, 0x02, 0x6E, 0x02, 0xD4, 0x10, 0x63, 0x22, 0x6C, 0x32
 			.byte 0x6E, 0x02, 0x2E, 0x01, 0xDE, 0x10, 0x64, 0x22, 0x6D, 0x32
 			.byte 0x00, 0x00 ; null byte at end
-
+	.endif
 cells:		.byte 0x64, 0x00, 0x65, 0x00, 0x66, 0x00, 0x6E, 0x00, 0x6F, 0x00, 0x70, 0x00, 0x78, 0x00, 0x79, 0x00, 0x7A, 0x00, 0xC8, 0x00, 0xC9, 0x00, 0xCA, 0x00, 0xD2, 0x00, 0xD3, 0x00, 0xD4, 0x00, 0xDC, 0x00, 0xDD, 0x00, 0xDE, 0x00, 0x2C, 0x01, 0x2D, 0x01, 0x2E, 0x01, 0x36, 0x01, 0x37, 0x01, 0x38, 0x01, 0x40, 0x01, 0x41, 0x01, 0x42, 0x01, 0x90, 0x01, 0x91, 0x01, 0x92, 0x01, 0x9A, 0x01, 0x9B, 0x01, 0x9C, 0x01, 0xA4, 0x01, 0xA5, 0x01, 0xA6, 0x01, 0xF4, 0x01, 0xF5, 0x01, 0xF6, 0x01, 0xFE, 0x01, 0xFF, 0x01, 0x00, 0x02, 0x08, 0x02, 0x09, 0x02, 0x0A, 0x02, 0x58, 0x02, 0x59, 0x02, 0x5A, 0x02, 0x62, 0x02, 0x63, 0x02, 0x64, 0x02, 0x6C, 0x02, 0x6D, 0x02, 0x6E, 0x02, 0xFF, 0xFF
 
 ; up: bits 6,7 - down: bits 4,5 - left: bits 2,3 right: 0,1
@@ -129,9 +130,11 @@ globals: 	.byte 0x0 			; don't use this, its only for vscode folding and searchi
 
 	.global new_o
 	.global rcd
+	.if separate_alist_file=0
 	.global set_color
 	.global get_color
 	.global get_cell
+	.endif
 	.global extract_cid
 	.global div_and_mod ; from library
 	.global	output_string ; from library
@@ -142,12 +145,54 @@ globals: 	.byte 0x0 			; don't use this, its only for vscode folding and searchi
 
 
 fotabp:		.word	fotab
+	.if separate_alist_file=0
 alistp:		.word 	alist
+	.endif
 rcdtabp:	.word 	rcdtab
 rcd2tabp:	.word 	rcdtab2
 getclcrashp:.word 	getclcrash
 rcdstrp:	.word 	rcdstr
 rcdstrp2:	.word 	rcdstr2
+
+	.if separate_alist_file=0
+set_color:
+	; given cell ID in r0
+	; given color in r1
+	; returns cell in r0
+	push	{r4-r12,lr}
+
+	; backup r1
+	mov		r4, r1
+	; set r1 to 4 to specify to get_cell we want exactly cell r0
+	mov		r1, #4
+	bl		get_cell
+	; now there's the cell contents in r0
+	orr		r0, r0, r4, lsl #12		; this adds the color into the cell contents
+
+	ldr		r7, alistp 		; get the pointer to the alist
+	strh	r0, [r7, r1]	; store the modified cell contents in the alist
+	mov		r11, #0xFFFF
+	movt	r11, #0xFFFF
+	strb	r11, [r7, #0] 	; data is not being stored?
+	; nothing else to do, return
+
+	pop		{r4-r12,lr}
+	mov		pc, lr
+
+get_color:
+	; given cell ID in r0
+	; no other registers are important
+	; return color in r0
+	push	{r4-r12,lr}
+
+	mov		r1, #4
+	bl		get_cell
+	and		r0, r0, #0xF000		; mask for the color
+	lsr		r0, r0, #12			; shift back to 1,2,3,4,5,6
+	; return
+	pop		{r4-r12,lr}
+	mov		pc, lr
+	.endif
 
 new_o:
 	; r0: current cell
@@ -271,43 +316,6 @@ rcdAfter_if2:
 	pop		{r4-r12, lr}
 	mov		pc, lr 			; return
 
-set_color:
-	; given cell ID in r0
-	; given color in r1
-	; returns cell in r0
-	push	{r4-r12,lr}
-
-	; backup r1
-	mov		r4, r1
-	; set r1 to 4 to specify to get_cell we want exactly cell r0
-	mov		r1, #4
-	bl		get_cell
-	; now there's the cell contents in r0
-	orr		r0, r0, r4, lsl #12		; this adds the color into the cell contents
-	
-	ldr		r7, alistp 		; get the pointer to the alist
-	strh	r0, [r7, r1]	; store the modified cell contents in the alist
-	mov		r11, #0xFFFF
-	strh	r11, [r7, r1] 	; data is not being stored?
-	; nothing else to do, return
-	
-	pop		{r4-r12,lr}
-	mov		pc, lr
-
-get_color:
-	; given cell ID in r0
-	; no other registers are important
-	; return color in r0
-	push	{r4-r12,lr}
-
-	mov		r1, #4
-	bl		get_cell
-	and		r0, r0, #0xF000		; mask for the color
-	lsr		r0, r0, #12			; shift back to 1,2,3,4,5,6
-	; return
-	pop		{r4-r12,lr}
-	mov		pc, lr
-
 
 extract_cid:
 	; input:   r0 - given cell index
@@ -329,7 +337,7 @@ extract_cid:
 	mov		pc, lr
 
 
-
+	.if separate_alist_file=0
 
 get_cell:
 
@@ -393,7 +401,7 @@ get_cell:
 
 	pop		{r4-r12,lr}
 	mov		pc, lr 
-
+	.endif
 
 
 dirindex:
@@ -484,7 +492,6 @@ dirindex:
 	moveq	r0, #3
 	moveq	pc, lr
 
-	
 	; if its not any of the above stuff, crash
 	bl		crash
 	
