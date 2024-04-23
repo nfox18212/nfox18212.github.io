@@ -113,13 +113,13 @@ star:		.equ	0x2A	; * - the asterisk
 newdm:		.set 	1
 
 init:
-	push	{r4-r12,lr}
+	push	{lr}
 	bl		uart_init			; initalize uart
 	bl		gpio_init			; init gpio
 	bl		uart_interrupt_init ; init interrupts for uart
 	bl		gpio_interrupt_init
 	bl		timer_init
-	pop		{r4-r12,lr}
+	pop		{lr}
 	mov		pc, lr				; return
 
 
@@ -332,14 +332,18 @@ gpio_init:
 	; INPUTS
 	mov		r0, #0x7000
 	movt	r0, #0x4000
-	ldrb	r1,	[r0, #0x400]
-	and		r1, r1, #0xF0			; to set a WRITE, we need a 0 for pins 0,1,2,3 - leave other bits alone with F
-	strb	r1, [r0, #0x400]	; #0x400 is the offset for gpio-direction
 
-	ldrb	r1, [r0, #0x51C]
+	ldrb	r1,	[r0, #0x400] 	; gpiodir
+	and		r1, r1, #0xF0		; set pins 0-3 as input by writing 0
+	strb	r1, [r0, #0x400]
+
+	ldrb	r1, [r0, #0x51C]	; gpioden
 	orr		r1, r1, #0x0F		; we want to enable all 4 bits, which is done with 0b1111 = #0xF
-	strb	r1, [r0, #0x51C]	; enable pins for digital i/o
-	; don't need to configure pull-up res
+	strb	r1, [r0, #0x51C]
+
+	ldrb	r1, [r0, #0x510] 	; gpiopur - enforce disable
+	and		r1, r1, #0xF0		; clear pins 0-3
+	strb	r1, [r0, #0x510]
 
 
 	; this is using port B, for the non-rgb LEDS on the trainer board
@@ -777,29 +781,50 @@ gpio_interrupt_init:
 	mov		r4, #0x5000				; port F address
 	movt	r4, #0x4002				; upper half of port F
 	ldrb	r5, [r4, #0x404]		; store a 0 to set GPIO interrupt to be edge sensitive
-	and		r5, r5, #sw1mask		; bitmask for pin 4
+	and		r5, r5, #0xEF			; bitmask for pin 4
 	strb	r5, [r4, #0x404]
 
 	ldrb	r5, [r4, #0x408]		; store 1 to configure to interrupt on both edges - so we store a 0
-	orr		r5, r5, #sw1write
+	and		r5, r5, #0xEF
 	strb	r5, [r4, #0x408]
 
 	ldrb	r5, [r4, #0x40C]		; store 0 to configure to interrupt on falling edge
-	and		r5, r5, #sw1mask
+	and		r5, r5, #0xEF
 	strb	r5, [r4, #0x40C]
 
 	ldrb	r5, [r4, #0x410]		; store 1 to enable interrupts
 	orr		r5, r5, #sw1write
 	strb	r5, [r4, #0x410]
 
-	; different base address for en0
-	mov		r4, #0xE000
-	movt	r4, #0xE000
+	;mov		r4, #0x7000				; port D address ( sw2-sw5)
+	;movt	r4, #0x4000
 
-	ldr		r5, [r4, #0x100]		; store 1 at E000E100
-	mov		r6, #0x0				; this is to set pin 30 to 1 to enable port F to interrupt
+	;ldrb	r5, [r4, #0x404]		; interrupt on edge sensitive
+	;and		r5, r5, #0xF0			; edge sensitive interrupt for pins 0-3 for sw 2-5
+	;strb	r5, [r4, #0x404]
+
+	;ldrb	r5, [r4, #0x408]		; configure to let GPIO interrupt event reg control when it interrupts
+	;and		r5, r5, #0xF0
+	;strb	r5, [r4, #0x408]
+
+	;ldrb	r5, [r4, #0x40C]		; interrupt on rising edge
+	;orr		r5, r5, #0x0F
+	;strb	r5, [r4, #0x40C]
+
+	;ldrb	r5, [r4, #0x410]		; interrupt mask register
+	;orr		r5, r5, #0x0F			; let pins 0-3 interrupt
+	;strb	r5, [r4, #0x410]
+
+
+	; different base address for en0
+	;mov		r4, #0xE000
+	;movt	r4, #0xE000
+
+	;dr		r5, [r4, #0x100]		; store 1 at E000E100
+	mov		r6, #0x0000				; set pin 30 and 19 to 1 to enable port D and F to interrupt
+	;movt	r6, #0x4008
 	movt	r6, #0x4000
-	orr		r5, r5, r6				; set to 1
+	orr		r5, r5, r6				; set bit values
 	str		r5, [r4, #0x100]
 
 	pop		{r4-r11,lr}

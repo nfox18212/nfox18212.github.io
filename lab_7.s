@@ -1,3 +1,5 @@
+	.cdecls C,NOLIST,"debug.h"
+
 clc .macro
 	push	{r0}
 	mov		r0, #clear	; form feed
@@ -7,7 +9,7 @@ clc .macro
 
 newl .macro				; print a newline
 	push 	{r0}
-	mov		r0, #return
+	mov		r0, #carreturn
 	bl		output_character
 	mov		r0, #newline
 	bl		output_character
@@ -125,9 +127,6 @@ teststrp:			.word teststr
 sw1mask:	.equ	0xEF	; bitmask to mask out for SW1, pin 4
 sw1write:	.equ 	0x10	; bitmasks to write a 1 for SW1, pin 4
 uartwrite:	.equ	0x20
-clear:		.equ	0xC		; form feed, new page
-newline:	.equ	0xA
-return:		.equ	0xD		; carriage return
 star:		.equ	0x2A	; asterisk - *
 
 lab7:							; This is your main routine which is called from your C wrapper.
@@ -141,13 +140,44 @@ lab7:							; This is your main routine which is called from your C wrapper.
 	ldr		r0, lstrp
 	bl		output_string
 
+	.if portdpoll=1
+poll1:
+	; grab port d information
+	mov		r4, #0x7000
+	movt	r4, #0x4000
+	ldr		r5, [r4, #0x3FC] ; grab GPIOD_DATA
+
+	; look for how long to play the game for
+	and		r8, r5, #1		; SW2
+	cmp		r8, #1
+	beq		unlimited
+
+	and		r8, r5, #2 	; SW3
+	cmp		r8, #2
+	beq		threehundred
+
+	and		r8, r5, #4 	; SW4
+	cmp		r8, #4
+	beq		twohundred
+
+	and		r8, r5, #8		; SW5
+	cmp		r8, #8
+	beq		onehundred
+
+
+
+	.endif
+
+
+	.if portdpoll=0
 poll1:
 	; poll on gpio first
 	ldr		r4, timesetp
-	cmp		r4, #0
+	ldrb	r5, [r4, #0x0]
+	cmp		r5, #0
 	beq		poll1
 	; goto uart poll
-
+	.endif
 
 poll2:							; temporary label
 	ldr		r4, createSeedp
@@ -339,20 +369,17 @@ exit_uart_handler:
 
 
 Switch_Handler:
-
-	; Your code for your UART handler goes here.
-	; Remember to preserver registers r4-r11 by pushing then popping
-	; them to & from the stack at the beginning & end of the handler
 	push	{r4-r11,lr}
 
 	; re-enable interrupts
 	mov		r4, #0xE000E000
 	ldr		r5, [r4, #0x100]		; store 1 at E000E100
-	mov		r6, #0x0				; this is to set pin 30 to 1 to enable port F to interrupt
+	mov		r6, #0x0000				; this is to set pin 30 to 1 to enable port F to interrupt
 	movt	r6, #0x4000
 	orr		r5, r5, r6				; set to 1
 	str		r5, [r4, #0x100]
 
+	.if portdpoll=0
 	mov		r9, #0x7000		; gpio port D
 	movt	r9, #0x4000
 	ldrb	r10, [r9, #0x3FC]
@@ -364,6 +391,8 @@ Switch_Handler:
 	it		eq
 	bleq	init_gameduration
 	beq		exit_gpio	; this is an initial setup thing, so exit gpio
+	.endif
+
 
 	; handle pausing
 	; if we haven't initialized how long to play for (meaning we're in game), the program will exit
@@ -382,8 +411,8 @@ init_gameduration:
 
 	push	{r4-r12, lr}
 
+	.if portdpoll=0
 	; we're going to abuse the fact that we know the contents of r4-r12.  so we can't touch r4 or preserve it if we do.
-
 	; look for how long to play the game for
 	and		r8, r10, #1		; SW2
 	cmp		r8, #1
@@ -400,7 +429,7 @@ init_gameduration:
 	and		r8, r10, #8		; SW5
 	cmp		r8, #8
 	beq		onehundred
-
+	.endif
 	; should probably crash here or something but i'm lazy
 
 
