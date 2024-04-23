@@ -19,8 +19,11 @@ animations="sebastien"
 draw_board="sebastien"
 player_color_swap="sebastien"
 
-[LEDS]
+[GPIO]
 reflect_color_on_leds="nate"
+initial_time_set="nate"
+dancing_leds="nate"
+
 
 [debug]
 cprogam="nate"

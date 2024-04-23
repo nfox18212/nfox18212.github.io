@@ -44,21 +44,31 @@ add3 .macro P1, P2, P3, ADDRP ; debug macro
 
 	.data
 
+moves:			.word	0x0
+moveStr:		.string "Moves: " ; no null terminator
+moveVal:		.string "       ", 0xD, 0xA, 0x0
+timeStr:		.string "Time: "
+timeVal:		.string "       ", 0xD, 0xA, 0x0
 scoreStr:		.string "Score = "	; intentionally not including a null terminator
-
 scoreVal: 		.string "   ", 0x0	
 
 teststr:		.string "testing testing", 0xA, 0xD, 0x0
 
-pause: 			.byte 	0x0		; if 1, then game is paused
+dopause: 		.byte 	0x0		; if 1, then game is paused
 tick:			.byte 	0x0		; if 1, then a tick has occured
 nextMovement:	.byte	0x0		; character that represents the user input for what direction cursor will move next
 score:			.byte 	0x0
+
+; menu information
+menustr:		.string "Welcome to NaFoxari Video Cube!  To start, choose a length of time to play for and push w, a, s, or d.  Then you can start playing!  WASD to move, Space to swap, SW1 to pause.", 0xD, 0xA, 0x0
+lengthstr:		.string "How long would you like to play the game?  Push SW5 for a 100 second game, SW4 for 200 seconds, SW3 for 300 seconds and SW2 for no time limit.", 0xD, 0xA, 0x0
+timeset:		.byte 	0x0		; time the game will go on for
 
 seeddata:		.word	0x0		; will be the initial seed we generate from the timer
 createSeed:		.byte	0x1 	; this configures wether or not we increment the counter for the seed and have the timer interrupt 1000 times per second
 gameTime:		.word	0x0 	; time the game has been going since starting
 playerdata:		.word	0x0006006F	; from largest byte to smallest: byte 0: orientation, byte 1: player color, byte 2 and byte 3: current cell.  starting cell is 111 and color is blue
+endgame:		.byte 	0x0
 	.global seeddata
 	.global	playerdata
 
@@ -89,15 +99,24 @@ include_debug:		.set 1
 
 
 movp:				.word nextMovement
+movesp:				.word moves
+movestrp:			.word moveStr
+movevalp:			.word moveVal
+timestrp:			.word timeStr
+timevalp:			.word timeVal
+timesetp:			.word timeset
 tickp:				.word tick
-pause_ptr:			.word pause
+pause_ptr:			.word dopause
 score_ptr:			.word score
 scoreStr_ptr:		.word scoreStr
 scoreVal_ptr:		.word scoreVal
+endgamep:			.word endgame
+lstrp:				.word lengthstr
+menup:				.word menustr
 
 seeddatap:			.word seeddata
 createSeedp:		.word createSeed
-gameTimep:			.word gameTime
+gametimep:			.word gameTime
 playerdatap:		.word playerdata
 
 teststrp:			.word teststr
@@ -115,23 +134,29 @@ lab7:							; This is your main routine which is called from your C wrapper.
 	push 	{r4-r12,lr}   		; Preserve registers to adhere to the AAPCS
 	bl 		init
 	clc							; clear screen
-	ldr		r0, teststrp
+
+	; print menu information
+	ldr		r0, menup
+	bl		output_string
+	ldr		r0, lstrp
 	bl		output_string
 
+poll1:
+	; poll on gpio first
+	ldr		r4, timesetp
+	cmp		r4, #0
+	beq		poll1
+	; goto uart poll
 
-poll:							; temporary label
+
+poll2:							; temporary label
 	ldr		r4, createSeedp
 	ldrb	r5, [r4, #0]
 	cmp		r5, #1				; will be used to indicate to we should create the seed
-	beq		poll				; will wait for uart interrupt to happen and resolve
+	beq		poll2				; will wait for uart interrupt to happen and resolve
 	bl		seed
 
-	; see if the seed has colored the board
-	mov		r0, #0x65
-	bl		get_color
-	
 
-	nop
 
 
 	pop		{r4-r12,lr}
@@ -241,15 +266,6 @@ UART0_Handler:
 	; them to & from the stack at the beginning & end of the handler
 	push	{r4-r11,lr}
 
-	; before interrupts are re-enabled, if this is the first interrupt, change timer using createSeedp
-	ldr		r1, createSeedp
-	ldrb	r0, [r1, #0]
-	cmp		r0, #1
-	it		eq
-	bleq	change_timer
-
-	; handle all the other stuff
-
 	; re-enable interrupt
 	mov 	r1, #0xE000
 	movt 	r1, #0xE000
@@ -287,7 +303,7 @@ UART0_Handler:
 	b		exit_uart_handler
 
 cont_uart:
-	; print it
+	; print it - will remove in final game
 	bl		output_character
 	newl
 	; change the relative direction dir to absolute - we need orientation form playerdata
@@ -307,6 +323,14 @@ cont_uart:
 
 	strb	r0, [r4, #0]
 
+	; set the seed
+	ldr		r1, createSeedp
+	ldrb	r0, [r1, #0]
+	cmp		r0, #1
+	it		eq
+	bleq	change_timer
+
+
 	; we're done so exit
 
 exit_uart_handler:
@@ -322,20 +346,107 @@ Switch_Handler:
 	push	{r4-r11,lr}
 
 	; re-enable interrupts
-	mov		r4, #0xE000
-	movt	r4, #0xE000
+	mov		r4, #0xE000E000
 	ldr		r5, [r4, #0x100]		; store 1 at E000E100
 	mov		r6, #0x0				; this is to set pin 30 to 1 to enable port F to interrupt
 	movt	r6, #0x4000
 	orr		r5, r5, r6				; set to 1
 	str		r5, [r4, #0x100]
 
+	mov		r9, #0x7000		; gpio port D
+	movt	r9, #0x4000
+	ldrb	r10, [r9, #0x3FC]
+	; check conditions
+	ldr		r4, timesetp
+	ldr		r12, [r4, #0]
+	; if its 0, we haven't set it.  otherwise, the switch that was pressed's number will be stored
+	cmp		r0, #0
+	it		eq
+	bleq	init_gameduration
+	beq		exit_gpio	; this is an initial setup thing, so exit gpio
+
+	; handle pausing
+	; if we haven't initialized how long to play for (meaning we're in game), the program will exit
+
+	; check to see if sw1 has been pushed
+	mov		r9, #0x5000
+	movt	r9, #0x4002
+	ldr		r10, [r9, #0x3FC]
+	and		r10, #16
+	beq		pause
+
+	; if neither case is true, exit
+	b		exit_gpio
+
+init_gameduration:
+
+	push	{r4-r12, lr}
+
+	; we're going to abuse the fact that we know the contents of r4-r12.  so we can't touch r4 or preserve it if we do.
+
+	; look for how long to play the game for
+	and		r8, r10, #1		; SW2
+	cmp		r8, #1
+	beq		unlimited
+
+	and		r8, r10, #2 	; SW3
+	cmp		r8, #2
+	beq		threehundred
+
+	and		r8, r10, #4 	; SW4
+	cmp		r8, #4
+	beq		twohundred
+
+	and		r8, r10, #8		; SW5
+	cmp		r8, #8
+	beq		onehundred
+
+	; should probably crash here or something but i'm lazy
+
+
+onehundred:
+
+	mov		r12, #100		; we hit switch 1 so store 100
+	str		r12, [r4, #0]
+	pop		{r4-r12, lr}
+	bx		lr
+
+
+
+twohundred:
+
+	mov		r12, #100		; we hit switch 2 so store 200
+	str		r12, [r4, #0]
+	pop		{r4-r12, lr}
+	bx		lr
+
+
+threehundred:
+
+	mov		r12, #300		; we hit switch 3 so store 300
+	str		r12, [r4, #0]
+	pop		{r4-r12, lr}
+	bx		lr
+
+unlimited:
+
+	; no time limit, store stupid big number (2,147,483,647 ticks)
+	mov		r12, #0xFFFF
+	movt	r12, #0x7FFF
+	pop		{r4-r12, lr}
+	bx		lr
+
+pause:
 	; if we hit sw1, pause the game
+
 	ldr		r4, pause_ptr
 	ldrb	r5, [r4, #0]			; check pause bit
 	eor		r5, r5, #1				; flip bit - if its a 1, game is paused if its a 0, game is unpaused
 	; two option - blocking loop w/ pause screen in handler or blocking loop after handler.  we do blocking loop out of handler first
 	strb	r5, [r4, #0]			; store the bit
+	b		exit_gpio
+
+exit_gpio:
 
 	pop		{r4-r11,lr}
 	bx		lr       	; Return
@@ -348,7 +459,14 @@ Timer_Handler:
 
 	push	{r4-r11, lr}
 
-	ldr		r5, gameTimep
+	; re-enable interrupt
+	mov		r4, #0x0000
+	movt	r4, #0x4003
+	ldr		r5, [r4, #0x24]
+	orr		r5, r5, #0x1
+	str		r5, [r4, #0x24]
+
+	ldr		r5, gametimep
 	ldr		r6, [r5, #0]
 	add		r6, r6, #1
 	str 	r6, [r5, #0]
@@ -360,14 +478,11 @@ Timer_Handler:
 	add		r8, r8, #1		; make the timer tick
 	strb	r8, [r7, #0]
 
-	; depending on settings inputted on main menu, if the timer passed a certain value, end the game.  will implement later
 
-	; re-enable interrupt
-	mov		r4, #0x0000
-	movt	r4, #0x4003
-	ldr		r5, [r4, #0x24]
-	orr		r5, r5, #0x1
-	str		r5, [r4, #0x24]
+
+	; depending on settings inputted on main menu, if the timer passed a certain value, end the game.
+
+
 
 	pop		{r4-r11, lr}
 	bx  	lr     ; Return
@@ -415,6 +530,11 @@ swap:	; routine to swap player's color with current cell's color
 	; swap player color and cell color
 	; put new color into player data
 	add		r5, r5, r0, lsl #16
+	str		r5, [r4, #0]	; store it
+
+	pop		{r0}			; get cid back
+	mov		r1, r7			; store color in r1
+	bl		set_color
 
 
 	pop		{r4-r11, lr}

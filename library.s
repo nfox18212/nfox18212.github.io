@@ -339,10 +339,7 @@ gpio_init:
 	ldrb	r1, [r0, #0x51C]
 	orr		r1, r1, #0x0F		; we want to enable all 4 bits, which is done with 0b1111 = #0xF
 	strb	r1, [r0, #0x51C]	; enable pins for digital i/o
-	; don't need to configure pull-up re 		; store any registers in the range of r4 through r12
-							; that are used in your routine.  include lr if this
-							; routine calls another routine.sistors
-
+	; don't need to configure pull-up res
 
 
 	; this is using port B, for the non-rgb LEDS on the trainer board
