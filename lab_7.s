@@ -66,12 +66,15 @@ menustr:		.string "Welcome to NaFoxari Video Cube!  To start, choose a length of
 lengthstr:		.string "How long would you like to play the game?  Push SW5 for a 100 second game, SW4 for 200 seconds, SW3 for 300 seconds and SW2 for no time limit.", 0xD, 0xA, 0x0
 timeset:		.byte 	0x0		; time the game will go on for
 
-seeddata:		.word	0x0		; will be the initial seed we generate from the timer
-createSeed:		.byte	0x1 	; this configures wether or not we increment the counter for the seed and have the timer interrupt 1000 times per second
-gameTime:		.word	0x0 	; time the game has been going since starting
-playerdata:		.word	0x0006006F	; from largest byte to smallest: byte 0: orientation, byte 1: player color, byte 2 and byte 3: current cell.  starting cell is 111 and color is blue
+seeddata:		.word	  0x0		      ; will be the initial seed we generate from the timer
+createSeed:	.byte	  0x1 	      ; this configures wether or not we increment the counter for the seed and have the timer interrupt 1000 times per second
+gameTime:		.word	  0x0 	      ; time the game has been going since starting
+playerdata:	.word	  0x0006006F	; from largest byte to smallest: byte 0: orientation, byte 1: player color, byte 2 and byte 3: current cell.  starting cell is 111 and color is blue
 endgame:		.byte 	0x0
-	.global seeddata
+atype:      .byte   0x0         ; describes the last type of action.  1 for movement in-face, 2 for movement onto a new face, 3 for a color swap
+
+  .global atype
+  .global seeddata
 	.global	playerdata
 
 	.text
@@ -100,28 +103,29 @@ include_debug:		.set 1
 	.global	seed
 
 
-movp:				.word nextMovement
-movesp:				.word moves
-movestrp:			.word moveStr
-movevalp:			.word moveVal
-timestrp:			.word timeStr
-timevalp:			.word timeVal
-timesetp:			.word timeset
-tickp:				.word tick
+movp: 				  .word nextMovement
+movesp:				  .word moves
+movestrp:			  .word moveStr
+movevalp:			  .word moveVal
+timestrp:			  .word timeStr
+timevalp:		  	.word timeVal
+timesetp:			  .word timeset
+tickp:		  		.word tick
 pause_ptr:			.word dopause
 score_ptr:			.word score
 scoreStr_ptr:		.word scoreStr
 scoreVal_ptr:		.word scoreVal
-endgamep:			.word endgame
-lstrp:				.word lengthstr
-menup:				.word menustr
+endgamep:			  .word endgame
+lstrp:				  .word lengthstr
+menup:				  .word menustr
+atypep:         .word atype
 
 seeddatap:			.word seeddata
 createSeedp:		.word createSeed
 gametimep:			.word gameTime
 playerdatap:		.word playerdata
 
-teststrp:			.word teststr
+teststrp:			  .word teststr
 
 
 sw1mask:	.equ	0xEF	; bitmask to mask out for SW1, pin 4
@@ -235,21 +239,39 @@ move:
 	; movement is stored as a character, convert to number
 	bl		dirindex
 	; now the movement is 0,1,2,3
-	mov		r1, r0			; move direction to r1	mov		r1, r0			; put new cell into r1
+	mov		r1, r0			; move direction to r1
 	mov		r0, r6			; put old cell into r0 for get_cell subroutine
-	push	{r1}			; backup r1
-	mov		r0, r6			; r6 => r0 for get_cell subroutine
-	
+	mov   r12, r1     ; backup r1
+
+  push  {r0-r2}     ; backup so we can extract cid
+  bl    extract_cid
+  mov   r11, r0     ; put face into r11
+  pop   {r0-r2}     ; restore
+
+  push  {r8-r9}
+  ; now we have the two face ids, old in r10 and new in r11
+  ldr   r8, atypep
+  cmp   r10, r11
+  ite   eq
+  moveq r9, #1  ; if faces are equal we haven't changed faces, so just put 1 in action type
+  movne r9, #2  ; if faces are inequal we have changed faces, so put 2 in atype
+  ldrb  r9, [r8, #0]
+  pop   {r8-r9}
+
 	bl		get_cell
-	pop		{r1}			; restore r1 being direction
+	mov		r1, r12			; restore r1 being direction
 	; r0 has the new cell and r1 is direction
+  push  {r0-r2}     ; backup new cell and direction and orientation 
+  ; while r0 is the newcell, extract the cid
+  bl    extract_cid
+  mov   r10, r0     ; backup new cell's face
+  pop   {r0-r2}
 
 	; now we need to determine the new orientation
 	bl		new_o
 	; now r2 contains the new orientation
 
 	push	{r0-r2}			; preserve new cell, direction, and orientation in that order
-
 	mov		r1, r0			; put new cell into r1
 	mov		r0, r6			; put old cell into r0
 	; detect for collision
