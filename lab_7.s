@@ -108,9 +108,9 @@ movesp:				  .word moves
 movestrp:			  .word moveStr
 movevalp:			  .word moveVal
 timestrp:			  .word timeStr
-timevalp:		  	.word timeVal
+timevalp:			  .word timeVal
 timesetp:			  .word timeset
-tickp:		  		.word tick
+tickp:	  	  		.word tick
 pause_ptr:			.word dopause
 score_ptr:			.word score
 scoreStr_ptr:		.word scoreStr
@@ -168,20 +168,34 @@ poll1:
 	cmp		r8, #8
 	beq		onehundred
 
+onehundred:
+
+	mov		r12, #100		; we hit switch 1 so store 100
+	str		r12, [r4, #0]
+  b     poll2
+
+twohundred:
+
+	mov		r12, #100		; we hit switch 2 so store 200
+	str		r12, [r4, #0]
+  b     poll2
+
+threehundred:
+
+	mov		r12, #300		; we hit switch 3 so store 300
+	str		r12, [r4, #0]
+  b     poll2
+
+unlimited:
+
+	; no time limit, store stupid big number (2,147,483,647 ticks)
+	mov		r12, #0xFFFF
+	movt	r12, #0x7FFF
+  	b     poll2
 
 
-	.endif
 
 
-	.if portdpoll=0
-poll1:
-	; poll on gpio first
-	ldr		r4, timesetp
-	ldrb	r5, [r4, #0x0]
-	cmp		r5, #0
-	beq		poll1
-	; goto uart poll
-	.endif
 
 poll2:							; temporary label
 	ldr		r4, createSeedp
@@ -190,6 +204,7 @@ poll2:							; temporary label
 	beq		poll2				; will wait for uart interrupt to happen and resolve
 	bl		seed
 
+  ; figre out the main routine here
 
 
 
@@ -451,10 +466,9 @@ init_gameduration:
 	and		r8, r10, #8		; SW5
 	cmp		r8, #8
 	beq		onehundred
-	.endif
 	; should probably crash here or something but i'm lazy
 
-
+  
 onehundred:
 
 	mov		r12, #100		; we hit switch 1 so store 100
@@ -486,6 +500,8 @@ unlimited:
 	movt	r12, #0x7FFF
 	pop		{r4-r12, lr}
 	bx		lr
+
+	.endif
 
 pause:
 	; if we hit sw1, pause the game
