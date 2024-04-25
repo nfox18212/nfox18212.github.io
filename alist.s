@@ -2,7 +2,7 @@
 
 ; test file for specifically working with the adjacency lis
 
-    .if separate_alist_file=1
+
         .data
 ; format described in docs
 ; simple description: first 4 bits are color, next 12 are the cell index.  0,1,2,3 are cardinal direction for East, South, North, West and other cell indexes.
@@ -64,6 +64,7 @@ alist:
 			.byte 0x00, 0x00 ; null byte at end
 
 crashstr:	.string 	"Encountered unresolvable problem, crashing program", 0xD,0xA, 0x0
+gccrashstr:	.string		"A player orientation greater than 4 was specified in get_cell, crashing program.", 0xD, 0xA, 0x0
 
 globals:    .byte 0x0
 
@@ -77,6 +78,7 @@ globals:    .byte 0x0
     .global check_board_state
 
 getclcrashp:	.word crashstr
+gccrashp:		.word gccrashstr
 alistp:     	.word alist
 
 set_color:
@@ -162,7 +164,7 @@ get_cell:
 
 	
 	; if r4 > 4, something has horribly wrong and crash the program
-	ldr		r0, getclcrashp ; custom crash string
+	ldr		r0, gccrashp ; custom crash strings
 	bgt		crash
 	
 	ldr		r5, alistp 		; grab ptr to alist
@@ -187,6 +189,5 @@ check_board_state:
 	bx		lr
 
 
-    .endif
 
     .end

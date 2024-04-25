@@ -1,7 +1,7 @@
 	.cdecls C,NOLIST,"debug.h"
 
 clc .macro
-	push	{r0}
+	push	{r0}F
 	mov		r0, #0xC	; form feed
 	bl	output_character
 	pop		{r0}
@@ -98,7 +98,10 @@ getbaddr: ; routine called from C
 
 crash:
 	; takes crash string in r0
+	; print the crash string
+	bl		output_string
 	; make this code uninterruptible
+	cpsid	i	; disables interrupts and configurable faults
 
 	; we are going to preserve the registers by putting them in memory
 	; r0-r12 and lr is 14 registers, so 14 words.  14*4 = 56 bytes.  Also preserve the pointer so add 4 more bytes. 60 bytes total.  Add 4 more bytes for padding.  64 bytes.
@@ -113,37 +116,6 @@ crash:
 	ldr		r5, caddrp		; get the address of where we're going to store the context address
 	str		r4, [r5, #0]	; store it
 	; now we've fully preserved the registers
-
-    .if en_timer_int=1
-    ; disable timer 0
-	mov		r4, #0x0000
-	movt	r4, #0x4003
-	ldr		r5, [r4, #0xC]
-	mov		r6, #0xFFFE
-	movt	r6, #0xFFFF
-	and		r5, r6, r5
-	str		r5, [r4, #0xC]
-	.endif 
-
-    .if en_uart_int=1
-	; disable uart interrupts
-	mov 	r1, #0xE000		; e0 base address
-	movt 	r1, #0xE000
-	ldr 	r0, [r1, #0x100]	; load offset
-	mov		r4, #0xFFDF			; 1s cmp of 0x20
-	movt	r4, #0xFFFF
-	and		r0, r4, #0x20		; set bit 5 to 0
-	str 	r0, [r1, #0x100]	; store change
-    .endif
-
-    .if en_gpio_int=1
-	; disable gpio interrupts
-	ldrb	r5, [r4, #0x410]		; store 0 to disable interrupts
-	mov		r6, #0xFF10
-	movt	r6, #0xFFFF
-	and		r5, r5, r6			
-	strb	r5, [r4, #0x410]
-    .endif
 
 	; set custom memory location to set that we intetionally caused a fault
 	ldr		r4, didcrashp
@@ -168,6 +140,7 @@ crash:
     .endif
 
     ; fault
+    cpsie	i	; enable interrupts
 	mov		r3, #0xFFFF
 	movt	r3, #0xFFFF
 	ldr		r3, [r3, #0] ; attempt to load invalid memory

@@ -57,10 +57,6 @@ void normalfault(void) {
     ufsrprint(ufsr);
   }
 
-//  // there's some stupid scoping stuff going on
-//  if(badaddr == 0){
-//	  badaddr = *(uint32_t *) badaddrp;
-//  }
 
   // make sure baddr is actually valid
   if(badaddr > 0x2F000000){
@@ -73,13 +69,26 @@ void normalfault(void) {
 	  ngoback(badaddr);  // goes back to assembly passing in the bad address
   }
 
-  // if we get here, we can't go back.
-  char *finalmsg = "No valid address found, cannot go back.\r\n";
-  output_string(finalmsg);
-  for (;;) {
-    // spin forever
-  }
+
+  for(;;);
+//  struct frame faultFrame;
+//  // unstack frame
+//  asm volatile (
+//		  "\tpop\t{r0-r3,r12}\n" // grab r0-r3 and r12
+//		  "\tmov\t%0, r0\n"	// move into c
+//		  "\tmov\t%1, r1\n"
+//		  "\tmov\t%2, r2\n"
+//		  "\tmov\t%3, r3\n"
+//		  "\tmov\t%4, r12\n"			// grab lr, pc and xspr - store in temp registers
+//		  "\tpop\t{r0-r2}\n"
+//		  "\tmov\t%5, r0\n"				// lr
+//		  "\tmov\t%6, r1\n"				// pc
+//		  "\tmov\t%7, r2\n" : "=r" (faultFrame.r0), "=r" (faultFrame.r1), "=r" (faultFrame.r2), "=r" (faultFrame.r3), "=r" (faultFrame.r12), "=r" (faultFrame.lr), "=r", (faultFrame.pc), "=r" (faultFrame.xpsr));
+//		  : "r0", "r1", "r2", "r3", "memory");
+
 }
+
+
 
 uint32_t handle_memfault(uint32_t mmsr) {
   volatile void *mmar = (volatile void *)0xE000ED34;  // address of the MemManage Address Register

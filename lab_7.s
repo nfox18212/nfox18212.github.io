@@ -56,9 +56,7 @@ scoreVal: 		.string "   ", 0x0
 
 teststr:		.string "testing testing", 0xA, 0xD, 0x0
 
-dopause: 		.byte 	0x0		; if 1, then game is paused
-tick:			.byte 	0x0		; if 1, then a tick has occured
-nextMovement:	.byte	0x0		; character that represents the user input for what direction cursor will move next
+
 score:			.byte 	0x0
 
 ; menu information
@@ -70,16 +68,23 @@ seeddata:		.word	0x0		    ; will be the initial seed we generate from the timer
 createSeed:		.byte	0x1 	    ; this configures wether or not we increment the counter for the seed and have the timer interrupt 1000 times per second
 gameTime:		.word	0x0 	    ; time the game has been going since starting
 playerdata:		.word	0x0006006F	; from largest byte to smallest: byte 0: orientation, byte 1: player color, byte 2 and byte 3: current cell.  starting cell is 111 and color is blue
-endgame:		.byte 	0x0
+endgame:		.byte 	0x0			; describes if/how we should end the game
 atype:      	.byte   0x0         ; describes the last type of action.  1 for movement in-face, 2 for movement onto a new face, 3 for a color swap
 
 	.global atype
   	.global seeddata
 	.global	playerdata
+	.global endgame
+	.global dopause
+	.global tick
+	.global nextMovement
+	.global	gameTime
+	.global createSeed
+	.global timeset
 
 	.text
 
-include_debug:		.set 1
+
 
 	.global init
 	.global UART0_Handler
@@ -102,9 +107,11 @@ include_debug:		.set 1
 	.global crash
 	.endif
 	.global	seed
+	.global swap
+
 	.global update
 	.global end_game
-
+	.global	move
 
 
 movp: 			.word nextMovement
@@ -130,12 +137,6 @@ gametimep:		.word gameTime
 playerdatap:	.word playerdata
 
 teststrp:		.word teststr
-
-
-sw1mask:	.equ	0xEF	; bitmask to mask out for SW1, pin 4
-sw1write:	.equ 	0x10	; bitmasks to write a 1 for SW1, pin 4
-uartwrite:	.equ	0x20
-star:		.equ	0x2A	; asterisk - *
 
 lab7:							; This is your main routine which is called from your C wrapper.
 	push 	{r4-r12,lr}   		; Preserve registers to adhere to the AAPCS
@@ -231,8 +232,9 @@ mainloop:
 	beq		mainloop
 	blne	end_game
 
-	; unreachable?
-
+	cmp		r0, #0x79			; end_game will return y if the user wants to reset
+	; reached if user wants to return
+	beq		resetgame
 
 	pop		{r4-r12,lr}
 	mov		pc, lr
@@ -351,195 +353,6 @@ move_exit:
 	pop		{r4-r12, lr}
 	mov		pc, lr
 
-
-UART0_Handler:
-
-	; Your code for your UART handler goes here.
-	; Remember to preserver registers r4-r11 by pushing then popping
-	; them to & from the stack at the beginning & end of the handler
-	push	{r4-r11,lr}
-
-	; re-enable interrupt
-	mov 	r1, #0xE000
-	movt 	r1, #0xE000
-	ldr 	r0, [r1, #0x100]
-	orr 	r0, r0, #uartwrite
-	str		r0, [r1, #0x100]
-
-	bl		read_character			; grab current character and store it in r0
-	; validate r0, make sure its w, a, s or d
-	; if its not, just exit handler
-
-	; w == 0x77
-	cmp		r0, #0x77
-	beq		cont_uart
-
-	; a == 0x61
-	cmp		r0, #0x61
-	beq		cont_uart
-
-	; s == 0x73
-	cmp		r0, #0x73
-	beq		cont_uart
-
-	; d == 0x64
-	cmp		r0, #0x64
-	beq		cont_uart
-
-	; if a space was inputted
-	cmp		r0, #0x20
-	it		eq
-	bleq	swap
-	beq		exit_uart_handler
-
-	;		if its not wasd then exit handler
-	b		exit_uart_handler
-
-cont_uart:
-	; print it - will remove in final game
-	bl		output_character
-	newl
-	; change the relative direction dir to absolute - we need orientation form playerdata
-	ldr		r6, playerdatap
-	ldr		r7, [r6, #0]
-	mov		r10, #0
-	movt	r10, #0xFF00	; filter for orientation
-	and		r1, r7, r10		; r1 contains the orientation
-	lsr		r1, r1, #24		; shove it back so its the smallest two bytes
-	; need to swap r0 and r1
-	mov		r12, r1			; DANCE!
-	mov		r1, r0
-	mov		r0, r12
-	bl		rcd				; convert the relative wasd to NSEW
-	; now we store r0 into nextMovement
-	ldr		r4, movp
-
-	strb	r0, [r4, #0]
-
-	; set the seed
-	ldr		r1, createSeedp
-	ldrb	r0, [r1, #0]
-	cmp		r0, #1
-	it		eq
-	bleq	change_timer
-
-
-	; we're done so exit
-
-exit_uart_handler:
-	pop		{r4-r11,lr}
-	bx		lr       				; Return
-
-
-Switch_Handler:
-	push	{r4-r11,lr}
-
-	; re-enable interrupts
-	mov		r4, #0xE000E000
-	ldr		r5, [r4, #0x100]		; store 1 at E000E100
-	mov		r6, #0x0000				; this is to set pin 30 to 1 to enable port F to interrupt
-	movt	r6, #0x4000
-	orr		r5, r5, r6				; set to 1
-	str		r5, [r4, #0x100]
-
-	; handle pausing
-	; if we haven't initialized how long to play for (meaning we're in game), the program will exit
-
-	; check to see if sw1 has been pushed
-	mov		r9, #0x5000
-	movt	r9, #0x4002
-	ldr		r10, [r9, #0x3FC]
-	and		r10, #16
-	beq		pause
-
-	; otherwise, exit
-	b		exit_gpio
-
-pause:
-	; if we hit sw1, pause the game
-
-	ldr		r4, pause_ptr
-	ldrb	r5, [r4, #0]			; check pause bit
-	eor		r5, r5, #1				; flip bit - if its a 1, game is paused if its a 0, game is unpaused
-	; two option - blocking loop w/ pause screen in handler or blocking loop after handler.  we do blocking loop out of handler first
-	strb	r5, [r4, #0]			; store the bit
-	b		exit_gpio
-
-exit_gpio:
-
-	pop		{r4-r11,lr}
-	bx		lr       	; Return
-
-
-; GameTimer_Handler:
-Timer_Handler:
-
-	; this timer is the game timer, and will tick two times per second after the game starts.  this handler will be used to control movement, ending the game, and time passed
-
-	push	{r4-r11, lr}
-
-	; re-enable interrupt
-	mov		r4, #0x0000
-	movt	r4, #0x4003
-	ldr		r5, [r4, #0x24]
-	orr		r5, r5, #0x1
-	str		r5, [r4, #0x24]
-
-	; increase game time
-	ldr		r5, gametimep
-	ldr		r6, [r5, #0]
-	add		r6, r6, #1
-	str 	r6, [r5, #0]
-
-	ldr		r7, tickp
-	ldrb	r8, [r7, #0]
-	add		r8, r8, #1		; make the timer tick
-	strb	r8, [r7, #0]
-
-	; depending on settings inputted on main menu, if the timer passed a certain value, end the game.
-	ldr		r7, timesetp
-	ldr		r8, [r7, #0]	; the amount of time to run the game for
-	cmp		r6, r8			; check to see if they're equal.  if they are, end the game.
-	it		eq
-	bleq	set_end
-
-	; commit the movement
-	bl		move
-
-	pop		{r4-r11, lr}
-	bx  	lr     ; Return
-
-set_end:
-	push 	{r4-r5}
-	ldr		r4, endgamep
-	mov		r5, #1			; endgame being 1 means we need to end the game
-	strb	r5, [r4, #0]
-	pop		{r4-r5}
-
-change_timer:
-	push	{r4-r11, lr}
-
-	; This subroutine should be called once per execution.  This will disable the seed timer, and stop it from interrupting.
-	sub		r0, r0, #1
-	strb	r0, [r1, #0]
-
-	; disable timer 1
-	mov		r4, #0x1000
-	movt	r4, #0x4003
-	ldr		r5, [r4, #0xC]
-	mov		r6, #0xFFFE
-	movt	r6, #0xFFFF
-	and		r5, r6, r5 ; mask out the very last bit
-	str		r5, [r4, #0xC]
-
-	; nab the timer value of TAV - offset #0x50
-	ldr		r5, [r4, #0x50]
-	; nab the seeddata pointer
-	ldr		r6, seeddatap
-	str		r5, [r6, #0]	; store the timer value in the seeddata
-
-	pop		{r4-r11, lr}
-	mov		pc, lr
 
 swap:	; routine to swap player's color with current cell's color
 	push	{r4-r11, lr}
