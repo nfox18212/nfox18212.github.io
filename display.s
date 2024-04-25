@@ -65,6 +65,7 @@ rotated_mat:    .word 0x0
     .global		output_string
     .global		get_color
     .global		set_color
+    .global 	update
 
 disp_row_00p:	.word disp_row_00
 disp_row_01p:	.word disp_row_01
@@ -73,6 +74,12 @@ playerdatap:    .word playerdata
 disp_row_20p: 	.word disp_row_20
 disp_row_02p:	.word disp_row_02
 topbotbarp:		.word topbotbar
+
+
+update:
+	bx		lr				; sebastien it's your job to implement this, you better do it.
+
+
 
 ; creates initial display matrix
 ; face 1, orientation 0, player at [1,1]

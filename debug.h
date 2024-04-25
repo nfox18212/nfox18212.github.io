@@ -11,6 +11,32 @@
 #define carreturn 0xD
 #define clear 0xC
 
+#define lab7_globals {\
+     .global init\
+	.global UART0_Handler\
+	.global Switch_Handler\
+	.global Timer_Handler\
+	.global read_character\
+	.global output_character \
+	.global read_string		\
+	.global output_string	\
+	.global lab7\
+	.global set_color\
+	.global get_color\
+	.global get_cell\
+	.global dirindex\
+	.global rcd\
+	.global extract_cid\
+	.global new_o\
+	.global check_board_state\
+	.if include_debug=1\
+	.global crash\
+	.endif\
+	.global	seed\
+	.global update\
+	.global end_game\
+	}
+
 
 // these two functions are implemented in assembly
 extern void goback(uint32_t addr);     // debug function to jump back to assembly and we can go to a faulted instruction

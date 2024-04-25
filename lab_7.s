@@ -62,19 +62,19 @@ nextMovement:	.byte	0x0		; character that represents the user input for what dir
 score:			.byte 	0x0
 
 ; menu information
-menustr:		.string "Welcome to NaFoxari Video Cube!  To start, choose a length of time to play for and push w, a, s, or d.  Then you can start playing!  WASD to move, Space to swap, SW1 to pause.", 0xD, 0xA, 0x0
-lengthstr:		.string "How long would you like to play the game?  Push SW5 for a 100 second game, SW4 for 200 seconds, SW3 for 300 seconds and SW2 for no time limit.", 0xD, 0xA, 0x0
-timeset:		.byte 	0x0		; time the game will go on for
+menustr:		.string "Welcome to NaFoxari Video Cube!  To start, choose a length of time to play for and push w, a, s, or d.", 0xD, 0xA,  "Then you can start playing!  WASD to move, Space to swap, SW1 to pause.", 0xD, 0xA, 0x0
+lengthstr:		.string "How long would you like to play the game?", 0xD, 0xA, "Push SW5 for a 100 second game, SW4 for 200 seconds, SW3 for 300 seconds and SW2 for no time limit.", 0xD, 0xA, 0x0
+timeset:		.word 	0x0			; time the game will go on for
 
-seeddata:		.word	  0x0		      ; will be the initial seed we generate from the timer
-createSeed:	.byte	  0x1 	      ; this configures wether or not we increment the counter for the seed and have the timer interrupt 1000 times per second
-gameTime:		.word	  0x0 	      ; time the game has been going since starting
-playerdata:	.word	  0x0006006F	; from largest byte to smallest: byte 0: orientation, byte 1: player color, byte 2 and byte 3: current cell.  starting cell is 111 and color is blue
+seeddata:		.word	0x0		    ; will be the initial seed we generate from the timer
+createSeed:		.byte	0x1 	    ; this configures wether or not we increment the counter for the seed and have the timer interrupt 1000 times per second
+gameTime:		.word	0x0 	    ; time the game has been going since starting
+playerdata:		.word	0x0006006F	; from largest byte to smallest: byte 0: orientation, byte 1: player color, byte 2 and byte 3: current cell.  starting cell is 111 and color is blue
 endgame:		.byte 	0x0
-atype:      .byte   0x0         ; describes the last type of action.  1 for movement in-face, 2 for movement onto a new face, 3 for a color swap
+atype:      	.byte   0x0         ; describes the last type of action.  1 for movement in-face, 2 for movement onto a new face, 3 for a color swap
 
-  .global atype
-  .global seeddata
+	.global atype
+  	.global seeddata
 	.global	playerdata
 
 	.text
@@ -97,35 +97,39 @@ include_debug:		.set 1
 	.global rcd
 	.global extract_cid
 	.global new_o
+	.global check_board_state
 	.if include_debug=1
 	.global crash
 	.endif
 	.global	seed
+	.global update
+	.global end_game
 
 
-movp: 				  .word nextMovement
-movesp:				  .word moves
-movestrp:			  .word moveStr
-movevalp:			  .word moveVal
-timestrp:			  .word timeStr
-timevalp:			  .word timeVal
-timesetp:			  .word timeset
-tickp:	  	  		.word tick
-pause_ptr:			.word dopause
-score_ptr:			.word score
-scoreStr_ptr:		.word scoreStr
-scoreVal_ptr:		.word scoreVal
-endgamep:			  .word endgame
-lstrp:				  .word lengthstr
-menup:				  .word menustr
-atypep:         .word atype
 
-seeddatap:			.word seeddata
-createSeedp:		.word createSeed
-gametimep:			.word gameTime
-playerdatap:		.word playerdata
+movp: 			.word nextMovement
+movesp:			.word moves
+movestrp:		.word moveStr
+movevalp:		.word moveVal
+timestrp:		.word timeStr
+timevalp:	  	.word timeVal
+timesetp:		.word timeset
+tickp:			.word tick
+pause_ptr:		.word dopause
+score_ptr:		.word score
+scoreStr_ptr:	.word scoreStr
+scoreVal_ptr:	.word scoreVal
+endgamep:		.word endgame
+lstrp:			.word lengthstr
+menup:			.word menustr
+atypep:		    .word atype
 
-teststrp:			  .word teststr
+seeddatap:		.word seeddata
+createSeedp:	.word createSeed
+gametimep:		.word gameTime
+playerdatap:	.word playerdata
+
+teststrp:		.word teststr
 
 
 sw1mask:	.equ	0xEF	; bitmask to mask out for SW1, pin 4
@@ -136,6 +140,8 @@ star:		.equ	0x2A	; asterisk - *
 lab7:							; This is your main routine which is called from your C wrapper.
 	push 	{r4-r12,lr}   		; Preserve registers to adhere to the AAPCS
 	bl 		init
+
+resetgame:
 	clc							; clear screen
 
 	; print menu information
@@ -144,7 +150,7 @@ lab7:							; This is your main routine which is called from your C wrapper.
 	ldr		r0, lstrp
 	bl		output_string
 
-	.if portdpoll=1
+
 poll1:
 	; grab port d information
 	mov		r4, #0x7000
@@ -152,50 +158,50 @@ poll1:
 	ldr		r5, [r4, #0x3FC] ; grab GPIOD_DATA
 
 	; look for how long to play the game for
-	and		r8, r5, #1		; SW2
-	cmp		r8, #1
+	and		r8, r5, #8		; SW2
+	cmp		r8, #8
 	beq		unlimited
 
-	and		r8, r5, #2 	; SW3
-	cmp		r8, #2
+	and		r8, r5, #4 		; SW3
+	cmp		r8, #4
 	beq		threehundred
 
-	and		r8, r5, #4 	; SW4
-	cmp		r8, #4
+	and		r8, r5, #2 		; SW4
+	cmp		r8, #2
 	beq		twohundred
 
-	and		r8, r5, #8		; SW5
-	cmp		r8, #8
+	and		r8, r5, #1		; SW5
+	cmp		r8, #1
 	beq		onehundred
+
+	; if it wasn't any of the above, poll
+	b		poll1
 
 onehundred:
 
 	mov		r12, #100		; we hit switch 1 so store 100
 	str		r12, [r4, #0]
-  b     poll2
+  	b	    poll2
 
 twohundred:
 
-	mov		r12, #100		; we hit switch 2 so store 200
+	mov		r12, #200		; we hit switch 2 so store 200
 	str		r12, [r4, #0]
-  b     poll2
+  	b	    poll2
 
 threehundred:
 
 	mov		r12, #300		; we hit switch 3 so store 300
 	str		r12, [r4, #0]
-  b     poll2
+ 	b     	poll2
 
 unlimited:
 
-	; no time limit, store stupid big number (2,147,483,647 ticks)
+	; no time limit, store stupid big number (2,147,483,647 ticks which is ~34 years )
 	mov		r12, #0xFFFF
 	movt	r12, #0x7FFF
-  	b     poll2
-
-
-
-
+	str		r12, [r4, #0]
+  	b    	poll2
 
 poll2:							; temporary label
 	ldr		r4, createSeedp
@@ -203,9 +209,29 @@ poll2:							; temporary label
 	cmp		r5, #1				; will be used to indicate to we should create the seed
 	beq		poll2				; will wait for uart interrupt to happen and resolve
 	bl		seed
+	; set up addresses that will be used
+	ldr		r4, tickp
+	ldr		r8, endgamep
 
-  ; figre out the main routine here
+mainloop:
+  	; figure out the main routine here
 
+	ldrb	r5, [r4, #0]		; check to see if a tick has occured
+	cmp		r5, #0
+	beq		mainloop
+	mov		r5, #0				; reset tick
+	strb	r5, [r4, #0]
+	bl		update				; render the board and any changes
+	bl		check_board_state	; check the board state to see if any/how many faces are completed, and if we should end the game
+
+	; check to see if we should end the game
+	ldrb	r9, [r8, #0]
+	cmp		r9, #0				; if its 0 we continue the game
+	ite		eq
+	beq		mainloop
+	blne	end_game
+
+	; unreachable?
 
 
 	pop		{r4-r12,lr}
@@ -256,31 +282,31 @@ move:
 	; now the movement is 0,1,2,3
 	mov		r1, r0			; move direction to r1
 	mov		r0, r6			; put old cell into r0 for get_cell subroutine
-	mov   r12, r1     ; backup r1
+	mov   	r12, r1    		; backup r1
 
-  push  {r0-r2}     ; backup so we can extract cid
-  bl    extract_cid
-  mov   r11, r0     ; put face into r11
-  pop   {r0-r2}     ; restore
+  	push  	{r0-r2}     		; backup so we can extract cid
+  	bl    	extract_cid
+  	mov   	r11, r0   	  	; put face into r11
+  	pop   	{r0-r2}    		; restore
 
-  push  {r8-r9}
-  ; now we have the two face ids, old in r10 and new in r11
-  ldr   r8, atypep
-  cmp   r10, r11
-  ite   eq
-  moveq r9, #1  ; if faces are equal we haven't changed faces, so just put 1 in action type
-  movne r9, #2  ; if faces are inequal we have changed faces, so put 2 in atype
-  ldrb  r9, [r8, #0]
-  pop   {r8-r9}
+  	push  {r8-r9}
+  	; now we have the two face ids, old in r10 and new in r11
+  	ldr   	r8, atypep
+  	cmp   	r10, r11
+  	ite   	eq
+  	moveq 	r9, #1  ; if faces are equal we haven't changed faces, so just put 1 in action type
+	movne 	r9, #2  ; if faces are inequal we have changed faces, so put 2 in atype
+  	ldrb  	r9, [r8, #0]
+  	pop   	{r8-r9}
 
 	bl		get_cell
 	mov		r1, r12			; restore r1 being direction
 	; r0 has the new cell and r1 is direction
-  push  {r0-r2}     ; backup new cell and direction and orientation 
-  ; while r0 is the newcell, extract the cid
-  bl    extract_cid
-  mov   r10, r0     ; backup new cell's face
-  pop   {r0-r2}
+	push  	{r0-r2}     ; backup new cell and direction and orientation
+ 	; while r0 is the newcell, extract the cid
+  	bl    	extract_cid
+  	mov	   	r10, r0     ; backup new cell's face
+  	pop 	{r0-r2}
 
 	; now we need to determine the new orientation
 	bl		new_o
@@ -416,21 +442,6 @@ Switch_Handler:
 	orr		r5, r5, r6				; set to 1
 	str		r5, [r4, #0x100]
 
-	.if portdpoll=0
-	mov		r9, #0x7000		; gpio port D
-	movt	r9, #0x4000
-	ldrb	r10, [r9, #0x3FC]
-	; check conditions
-	ldr		r4, timesetp
-	ldr		r12, [r4, #0]
-	; if its 0, we haven't set it.  otherwise, the switch that was pressed's number will be stored
-	cmp		r0, #0
-	it		eq
-	bleq	init_gameduration
-	beq		exit_gpio	; this is an initial setup thing, so exit gpio
-	.endif
-
-
 	; handle pausing
 	; if we haven't initialized how long to play for (meaning we're in game), the program will exit
 
@@ -441,67 +452,8 @@ Switch_Handler:
 	and		r10, #16
 	beq		pause
 
-	; if neither case is true, exit
+	; otherwise, exit
 	b		exit_gpio
-
-init_gameduration:
-
-	push	{r4-r12, lr}
-
-	.if portdpoll=0
-	; we're going to abuse the fact that we know the contents of r4-r12.  so we can't touch r4 or preserve it if we do.
-	; look for how long to play the game for
-	and		r8, r10, #1		; SW2
-	cmp		r8, #1
-	beq		unlimited
-
-	and		r8, r10, #2 	; SW3
-	cmp		r8, #2
-	beq		threehundred
-
-	and		r8, r10, #4 	; SW4
-	cmp		r8, #4
-	beq		twohundred
-
-	and		r8, r10, #8		; SW5
-	cmp		r8, #8
-	beq		onehundred
-	; should probably crash here or something but i'm lazy
-
-  
-onehundred:
-
-	mov		r12, #100		; we hit switch 1 so store 100
-	str		r12, [r4, #0]
-	pop		{r4-r12, lr}
-	bx		lr
-
-
-
-twohundred:
-
-	mov		r12, #100		; we hit switch 2 so store 200
-	str		r12, [r4, #0]
-	pop		{r4-r12, lr}
-	bx		lr
-
-
-threehundred:
-
-	mov		r12, #300		; we hit switch 3 so store 300
-	str		r12, [r4, #0]
-	pop		{r4-r12, lr}
-	bx		lr
-
-unlimited:
-
-	; no time limit, store stupid big number (2,147,483,647 ticks)
-	mov		r12, #0xFFFF
-	movt	r12, #0x7FFF
-	pop		{r4-r12, lr}
-	bx		lr
-
-	.endif
 
 pause:
 	; if we hit sw1, pause the game
@@ -533,26 +485,36 @@ Timer_Handler:
 	orr		r5, r5, #0x1
 	str		r5, [r4, #0x24]
 
+	; increase game time
 	ldr		r5, gametimep
 	ldr		r6, [r5, #0]
 	add		r6, r6, #1
 	str 	r6, [r5, #0]
-
-
 
 	ldr		r7, tickp
 	ldrb	r8, [r7, #0]
 	add		r8, r8, #1		; make the timer tick
 	strb	r8, [r7, #0]
 
-
-
 	; depending on settings inputted on main menu, if the timer passed a certain value, end the game.
+	ldr		r7, timesetp
+	ldr		r8, [r7, #0]	; the amount of time to run the game for
+	cmp		r6, r8			; check to see if they're equal.  if they are, end the game.
+	it		eq
+	bleq	set_end
 
-
+	; commit the movement
+	bl		move
 
 	pop		{r4-r11, lr}
 	bx  	lr     ; Return
+
+set_end:
+	push 	{r4-r5}
+	ldr		r4, endgamep
+	mov		r5, #1			; endgame being 1 means we need to end the game
+	strb	r5, [r4, #0]
+	pop		{r4-r5}
 
 change_timer:
 	push	{r4-r11, lr}
@@ -582,6 +544,11 @@ change_timer:
 swap:	; routine to swap player's color with current cell's color
 	push	{r4-r11, lr}
 
+	; set last action type to be a swap
+	ldr		r4, atypep
+	mov		r5, #3
+	strb	r5, [r4, #0]
+
 	ldr		r4, playerdatap
 	ldr		r5, [r4, #0]	; get the player data
 	mov		r6, #0xFF0000	; filter for color data
@@ -606,16 +573,6 @@ swap:	; routine to swap player's color with current cell's color
 
 	pop		{r4-r11, lr}
 	bx		lr
-
-
-
-exit:
-	push	{r4-r11, lr}
-
-
-
-	pop		{r4-r11, lr}
-	mov		pc, lr
 
 
 	.end

@@ -74,6 +74,7 @@ globals:    .byte 0x0
     .global div_and_mod
     .global extract_cid
     .global crash
+    .global check_board_state
 
 getclcrashp:	.word crashstr
 alistp:     	.word alist
@@ -177,31 +178,15 @@ get_cell:
 	mov		pc, lr 
 
 
+check_board_state:
+
+	push	{r4-r12, lr}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	pop		{r4-r12, lr}
+	bx		lr
 
 
     .endif
+
+    .end
