@@ -30,7 +30,6 @@ stringp:	.word 	stringthing
 end_game:
 	push	{r4-r12, lr}
 
-	.if test_new_int2str=0
 	; determine cause of ending the game
 	ldr		r4, endgamep
 	ldrb	r5, [r4, #0]
@@ -49,13 +48,7 @@ end_game:
 	blne	led_dance
 	bl		output_string
 	; find out what the user wants to do
-	.endif
 
-	.if test_new_int2str=1
-	ldr		r0, stringp
-	mov		r1, #0x0405
-	bl		int2string
-	.endif
 	
 
 rpoll:
@@ -95,43 +88,6 @@ expl:
 	bne		expl
 	mov		r2, r4		; use r2 as return reg
 	pop		{r4, lr}
-	bx		lr
-
-int2string:
-	; takes string location in r0, and number to convert in r1
-	push	{r4-r12}
-	
-	mov		r10,r0 
-	mov		r11, r1	; backup registers
-	mov		r9, r10	; copy r10
-
-	; start by diving by 10^8 - support up to 8 digits
-	mov		r0, #10
-	mov		r1, #8
-	mov		r8, r1	; copy into r8
-convloop:
-	mov		r1, r8
-	bl		exp
-	; now we have 1^8 in r2
-	mov		r1, r2
-	mov		r0, r10		; divmod(num, 1^10)
-	bl		div_and_mod
-	cmp		r0, #0		; to ignore leading zeros, as long as we haven't hit a nonzero number, ignore any zeros we encounter
-	; but as soon as we encounter a nonzero number, copy a 
-	; one into r12.  this will signify that the zero is not actually leading
-	it		ne
-	movne	r12, #1
-
-	cmp		r12, #1
-	itt		eq ; str address is in r10
-	addeq	r0, r0, #0x30	; convert to character
-	streq	r0, [r9], #1	; post-index store
-
-	sub		r8, r8, #-1		; subtract 1 from the exponent
-	cmp		r8, #0			; see if the exponent is 0 or not.  if it is, we're done
-	bne		convloop
-
-	pop		{r4-r12, lr}
 	bx		lr
 
 

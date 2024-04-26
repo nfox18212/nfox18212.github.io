@@ -401,7 +401,7 @@ rloop:						; Recieve loop
 
 
 int2string:
-	; limitation: only will work for numbers with at most 3 digits.
+	; limitation: only will work for numbers with at most 4 digits.
 	push 	{r4-r12,lr} 	; store any registers in the range of r4 through r12
 							; that are used in your routine.  include lr if this
 							; routine calls another routine.

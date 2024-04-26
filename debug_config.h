@@ -7,7 +7,7 @@
 #define en_uart_out 1 // if you do not have an implementation of uart_out, disable this
 #define separate_alist_file 1
 #define portdpoll 1	// poll on port d instead of using interrupts
-#define test_new_int2str 1
+#define test_new_int2str 0
 
 #define gotoend 1
 #define debug 1
