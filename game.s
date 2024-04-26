@@ -29,6 +29,8 @@ stringp:	.word 	stringthing
 
 end_game:
 	push	{r4-r12, lr}
+
+	.if test_new_int2str=0
 	; determine cause of ending the game
 	ldr		r4, endgamep
 	ldrb	r5, [r4, #0]
@@ -47,6 +49,14 @@ end_game:
 	blne	led_dance
 	bl		output_string
 	; find out what the user wants to do
+	.endif
+
+	.if test_new_int2str=1
+	ldr		r0, stringp
+	mov		r1, #0x0405
+	bl		int2string
+	.endif
+	
 
 rpoll:
 	ldr		r0, instrp
@@ -68,9 +78,6 @@ skip:
 
 	; return from subrouine
 	mov		r0, r6			; copy the character the user gave into r0 to return to main
-	push	{r0}
-	ldr		r0, stringp
-	bl		int2string
 	bl		output_string
 	pop		{r0}
 	pop		{r4-r12, lr}
@@ -78,29 +85,34 @@ skip:
 
 
 exp:	; exponent
+	push	{r4, lr}
+	mov		r4, r0		; init r4 to be equal to r0
+expl:
 	; takes in base in r0, exponent in r1, result in r2
-	mla		r2, r0, r0, r2	; r2 := r2 + r0*r0
+	muls	r4, r0, r4
 	sub		r1, r1, #1		; r1 -= 1
 	cmp		r1, #0
-	bne		exp
+	bne		expl
+	mov		r2, r4		; use r2 as return reg
+	pop		{r4, lr}
 	bx		lr
 
 int2string:
 	; takes string location in r0, and number to convert in r1
 	push	{r4-r12}
 	
-	mov		r10, r0 
+	mov		r10,r0 
 	mov		r11, r1	; backup registers
 	mov		r9, r10	; copy r10
 
-	; start by diving by 1E10 - maximum number of digits we can support (0xFFFFFFFF is 10 digits in decimal)
+	; start by diving by 10^8 - support up to 8 digits
 	mov		r0, #10
-	mov		r1, #10
+	mov		r1, #8
 	mov		r8, r1	; copy into r8
 convloop:
 	mov		r1, r8
 	bl		exp
-	; now we have 1^10 in r2
+	; now we have 1^8 in r2
 	mov		r1, r2
 	mov		r0, r10		; divmod(num, 1^10)
 	bl		div_and_mod
@@ -111,11 +123,11 @@ convloop:
 	movne	r12, #1
 
 	cmp		r12, #1
-	itttt	eq ; str address is in r10
+	itt		eq ; str address is in r10
 	addeq	r0, r0, #0x30	; convert to character
 	streq	r0, [r9], #1	; post-index store
 
-	sub		r8, r8, #1		; subtract 1 from the exponent		
+	sub		r8, r8, #-1		; subtract 1 from the exponent
 	cmp		r8, #0			; see if the exponent is 0 or not.  if it is, we're done
 	bne		convloop
 
