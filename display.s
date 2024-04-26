@@ -320,23 +320,23 @@ east_loop:
     ; LAYER ONE
     ldr     r0, r6              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ldr     r0, r7              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ldr     r0, r8              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
     ldr     r0, nlp             ; print new line
     bl      output_string
 
     ; LAYER TWO    
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ; print cell 0
@@ -404,17 +404,17 @@ east_loop:
     ; LAYER THREE
     ldr     r0, r6              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ldr     r0, r7              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ldr     r0, r8              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
     ldr     r0, nlp             ; print new line
     bl      output_string
@@ -466,23 +466,23 @@ south_loop:
     ; LAYER ONE
     ldr     r0, r6              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ldr     r0, r7              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ldr     r0, r8              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
     ldr     r0, nlp             ; print new line
     bl      output_string
 
     ; LAYER TWO    
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ; print cell 0
@@ -550,17 +550,17 @@ south_loop:
     ; LAYER THREE
     ldr     r0, r6              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ldr     r0, r7              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ldr     r0, r8              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
     ldr     r0, nlp             ; print new line
     bl      output_string
@@ -612,23 +612,23 @@ north_loop:
     ; LAYER ONE
     ldr     r0, r6              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ldr     r0, r7              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ldr     r0, r8              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
     ldr     r0, nlp             ; print new line
     bl      output_string
 
     ; LAYER TWO    
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ; print cell 0
@@ -696,17 +696,17 @@ north_loop:
     ; LAYER THREE
     ldr     r0, r6              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ldr     r0, r7              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ldr     r0, r8              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
     ldr     r0, nlp             ; print new line
     bl      output_string
@@ -758,23 +758,23 @@ west_loop:
     ; LAYER ONE
     ldr     r0, r6              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ldr     r0, r7              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ldr     r0, r8              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
     ldr     r0, nlp             ; print new line
     bl      output_string
 
     ; LAYER TWO    
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ; print cell 0
@@ -842,17 +842,17 @@ west_loop:
     ; LAYER THREE
     ldr     r0, r6              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ldr     r0, r7              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ldr     r0, r8              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    mov     r0, sidebar         ; print sidebar
+    mov     r0, sidebarp         ; print sidebar
     bl      output_character
     ldr     r0, nlp             ; print new line
     bl      output_string
