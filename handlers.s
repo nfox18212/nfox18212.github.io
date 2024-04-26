@@ -100,9 +100,11 @@ UART0_Handler:
 	b		exit_uart_handler
 
 cont_uart:
+	.if debug=1
 	; print it - will remove in final game
 	bl		output_character
 	newl
+	.endif
 	; change the relative direction dir to absolute - we need orientation form playerdata
 	ldr		r6, playerdatap
 	ldr		r7, [r6, #0]
@@ -226,6 +228,7 @@ set_end:
 	mov		r5, #1			; endgame being 1 means the user ran out of time
 	strb	r5, [r4, #0]
 	pop		{r4-r5}
+	bx		lr
 
 change_timer:
 	push	{r4-r11, lr}

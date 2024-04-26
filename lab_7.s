@@ -152,11 +152,16 @@ resetgame:
 	bl		output_string
 
 
+
 poll1:
 	; grab port d information
 	mov		r4, #0x7000
 	movt	r4, #0x4000
 	ldr		r5, [r4, #0x3FC] ; grab GPIOD_DATA
+
+	.if debug!=0
+	mov		r5, #8
+	.endif
 
 	; look for how long to play the game for
 	and		r8, r5, #8		; SW2
@@ -207,6 +212,9 @@ unlimited:
 poll2:							; temporary label
 	ldr		r4, createSeedp
 	ldrb	r5, [r4, #0]
+	.if		debug=1
+	mov		r5, #0
+	.endif
 	cmp		r5, #1				; will be used to indicate to we should create the seed
 	beq		poll2				; will wait for uart interrupt to happen and resolve
 	bl		seed
@@ -224,9 +232,11 @@ mainloop:
 	strb	r5, [r4, #0]
 	bl		update				; render the board and any changes
 	bl		check_board_state	; check the board state to see if any/how many faces are completed, and if we should end the game
-
 	; check to see if we should end the game
 	ldrb	r9, [r8, #0]
+	.if 	debug=1
+	mov		r9, #1
+	.endif
 	cmp		r9, #0				; if its 0 we continue the game
 	ite		eq
 	beq		mainloop
@@ -279,8 +289,11 @@ move:
 	ldr		r12, movp
 	ldrb	r0, [r12, #0]	; get the next movement - it is absolute since next_movement only stores absolute movement
 
+	cmp		r0, #0			; make sure there next is a next movement
+	it		ne
 	; movement is stored as a character, convert to number
-	bl		dirindex
+	blne	dirindex
+	beq		move_exit		; if there's no movement, skip to end
 	; now the movement is 0,1,2,3
 	mov		r1, r0			; move direction to r1
 	mov		r0, r6			; put old cell into r0 for get_cell subroutine
@@ -349,7 +362,11 @@ move:
 	str		r5, [r4, #0] 	; store the new playerdata
 
 move_exit:
-	; return from move subroutine
+	; clean up
+	ldr		r12, movp		; set no next movement so if the user doesn't input anything, there's no movement of the character
+	mov		r11, #0
+	strb	r11, [r12, #0]
+	; return
 	pop		{r4-r12, lr}
 	mov		pc, lr
 

@@ -340,7 +340,7 @@ dvmdl:
 	; r5 is the remainder, r4 is the quotient
 	mov		r0, r4
 	mov		r1, r5
-
+	; returns quotient in r0, remainder in r1
 	pop		{r4-r12,lr}
 	bx		lr
 	.endif

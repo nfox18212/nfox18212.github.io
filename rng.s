@@ -60,10 +60,12 @@ idxstrp:	.word 	idxstr
 seed:
     push    {r4-r12, lr}
     ldr     r4, seeddatap
-    ; ldr     r7, [r4, #0]        ; this is the initial seed
+    ldr     r7, [r4, #0]        ; this is the initial seed
 	; use test seed
+	.if	debug!=0
 	mov		r7, #0x59DF
 	movt	r7, #0x5F37			; if you get the reference, you get +100 points
+	.endif
     mov     r10, #1000          ; r10 will be the number of iterations
 	ldr		r6, colorlistp		; pointer to color list
 
