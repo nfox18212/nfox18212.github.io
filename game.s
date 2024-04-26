@@ -93,10 +93,12 @@ int2string:
 	mov		r11, r1	; backup registers
 	mov		r9, r10	; copy r10
 
-convloop:
 	; start by diving by 1E10 - maximum number of digits we can support (0xFFFFFFFF is 10 digits in decimal)
 	mov		r0, #10
 	mov		r1, #10
+	mov		r8, r1	; copy into r8
+convloop:
+	mov		r1, r8
 	bl		exp
 	; now we have 1^10 in r2
 	mov		r1, r2
@@ -113,6 +115,9 @@ convloop:
 	addeq	r0, r0, #0x30	; convert to character
 	streq	r0, [r9], #1	; post-index store
 
+	sub		r8, r8, #1		; subtract 1 from the exponent		
+	cmp		r8, #0			; see if the exponent is 0 or not.  if it is, we're done
+	bne		convloop
 
 	pop		{r4-r12, lr}
 	bx		lr
