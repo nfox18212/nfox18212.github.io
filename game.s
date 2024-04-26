@@ -29,6 +29,7 @@ stringp:	.word 	stringthing
 
 end_game:
 	push	{r4-r12, lr}
+	
 	; determine cause of ending the game
 	ldr		r4, endgamep
 	ldrb	r5, [r4, #0]

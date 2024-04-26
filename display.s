@@ -9,12 +9,12 @@ magentabg:  .string 27,"[48;5;35H"
 cyanbg:     .string 27,"[48;5;36H"
 
 ; useful strings for display
-topbotbar   .string "+-----------------+", 0xD, 0xA, 0x0
-midbar      .string "|-----|-----|-----|", 0xD, 0xA, 0x0
+topbotbar   .string "+-----------------+", #0xD, #0xA, #0x0
+midbar      .string "|-----|-----|-----|", #0xD, #0xA, #0x0
 sidebar     .char "|"
 timeStr     .string "time:"
 movesStr    .string "moves:"
-new_line    .string 0xD, 0xA, 0x0
+new_line    .string #0xD, #0xA, #0x0
 twoSpaces   .string "  "
 
 ; following the 4 bit player flag representing cells 0-8, there are 9 sets of 3 bit 
@@ -26,8 +26,8 @@ twoSpaces   .string "  "
 ;       101 = MAGENTA
 ;       110 = CYAN
 ; initial disp_mat shows player in cell 4 (center), with no colors input yet
-disp_mat:       .word 0x0
-adj_mat:        .word 0x0
+disp_mat:       .word #0x0
+adj_mat:        .word #0x0
 
     .global     playerdata
     .global     atype
@@ -196,7 +196,7 @@ UPDATE_DISPLAY:                     ; TAKE IN ACTION AND ADJUST MATRIX ACCORDING
 place_color:
     ldr     r5, disp_matp           ; load display matrix
     mov     r6, #0xFFFF
-    movt    r6, #0xF8FF             ; initial mask 0x1111100011111111 1111111111111111
+    movt    r6, #0xF8FF             ; initial mask #0x1111100011111111 1111111111111111
     bl      get_color               ; r0 HOLDS CELL COLOR
 
     mov     r7, #3                  ; #3
@@ -216,7 +216,7 @@ place_color:
 same_face:
     ldr     r5, disp_matp           ; input into disp_mat
     mov     r6, #0xFFFF
-    movt    r6, #0x07FF             ; initial mask 0x0000011111111111 1111111111111111
+    movt    r6, #0x07FF             ; initial mask #0x0000011111111111 1111111111111111
     and     r5, r5, r6
     lsl     r1, r1, #28             ; shift position left
     orr     r5, r5, r1              ; insert new player position
@@ -318,25 +318,25 @@ east_loop:
     ldr     r8, r0              ; cell 2 pointer to ansi color now in r8        
 
     ; LAYER ONE
-    ldr     r0, r6              ; input for layer_loop
+    ldr     r0, [r6, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
-    ldr     r0, r7              ; input for layer_loop
+    ldr     r0, [r7, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
-    ldr     r0, r8              ; input for layer_loop
+    ldr     r0, [r8, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
     ldr     r0, nlp             ; print new line
     bl      output_string
 
     ; LAYER TWO    
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ; print cell 0
@@ -345,13 +345,13 @@ east_loop:
     ldreq   r0, r6              ; print cell color once
     bleq    output_character
     ldreq   r3, playerdatap     ; load playerdata into r3 from r4
-    andeq   r3, r3, 0x00FF0000  ; mask color byte
+    andeq   r3, r3, #0x00FF0000  ; mask color byte
     roreq   r3, r3, #16         ; right shift
     bleq    find_op_color       ; player color from find_op_color to r0
     bleq    output_string       ; print player color 3 times
     bleq    output_string
     bleq    output_string 
-    ldreq   r0, r7              ; print cell color once
+    ldreq   r0, [r7, #0]              ; print cell color once
     bleq    output_character
     ldrne   r0, r6              ; else, 
     blne    layer_loop          ; print cell color five times 
@@ -362,18 +362,18 @@ east_loop:
     ; print cell 1
     cmp     r4, r1              
     ite     eq                  ; if player_pos(r1) equal to cell num (r4)
-    ldreq   r0, r7              ; print cell color once
+    ldreq   r0, [r7, #0]              ; print cell color once
     bleq    output_character
     ldreq   r3, playerdatap     ; load playerdata into r3 from r4
-    andeq   r3, r3, 0x00FF0000  ; mask color byte
+    andeq   r3, r3, #0x00FF0000  ; mask color byte
     roreq   r3, r3, #16         ; right shift
     bleq    find_op_color       ; player color from find_op_color to r0
     bleq    output_string       ; print player color 3 times
     bleq    output_string
     bleq    output_string 
-    ldreq   r0, r7              ; print cell color once
+    ldreq   r0, [r7, #0]              ; print cell color once
     bleq    output_character
-    ldrne   r0, r7              ; else, 
+    ldrne   r0, [r7, #0]              ; else, 
     blne    layer_loop          ; print cell color five times 
     ldr     r0, sidebarp        ; print sidebar
     bl      output_character
@@ -385,7 +385,7 @@ east_loop:
     ldreq   r0, r8              ; print cell color once
     bleq    output_character
     ldreq   r3, playerdatap     ; load playerdata into r3 from r4
-    andeq   r3, r3, 0x00FF0000  ; mask color byte
+    andeq   r3, r3, #0x00FF0000  ; mask color byte
     roreq   r3, r3, #16         ; right shift
     bleq    find_op_color       ; player color from find_op_color to r0
     bleq    output_string       ; print player color 3 times
@@ -393,7 +393,7 @@ east_loop:
     bleq    output_string 
     ldreq   r0, r8              ; print cell color once
     bleq    output_character
-    ldrne   r0, r8              ; else, 
+    ldrne   r0, [r8, #0]              ; else, 
     blne    layer_loop          ; print cell color five times 
     ldr     r0, sidebarp        ; print sidebar
     bl      output_character
@@ -402,19 +402,19 @@ east_loop:
     add     r4, r4, #1          ; iterate cell num
 
     ; LAYER THREE
-    ldr     r0, r6              ; input for layer_loop
+    ldr     r0, [r6, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
-    ldr     r0, r7              ; input for layer_loop
+    ldr     r0, [r7, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
-    ldr     r0, r8              ; input for layer_loop
+    ldr     r0, [r8, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
     ldr     r0, nlp             ; print new line
     bl      output_string
@@ -464,25 +464,25 @@ south_loop:
     ldr     r8, r0              ; cell 2 pointer to ansi color now in r8        
 
     ; LAYER ONE
-    ldr     r0, r6              ; input for layer_loop
+    ldr     r0, [r6, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
-    ldr     r0, r7              ; input for layer_loop
+    ldr     r0, [r7, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
-    ldr     r0, r8              ; input for layer_loop
+    ldr     r0, [r8, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
     ldr     r0, nlp             ; print new line
     bl      output_string
 
     ; LAYER TWO    
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ; print cell 0
@@ -491,13 +491,13 @@ south_loop:
     ldreq   r0, r6              ; print cell color once
     bleq    output_character
     ldreq   r3, playerdatap     ; load playerdata into r3 from r4
-    andeq   r3, r3, 0x00FF0000  ; mask color byte
+    andeq   r3, r3, #0x00FF0000  ; mask color byte
     roreq   r3, r3, #16         ; right shift    
     bleq    find_op_color       ; player color from find_op_color to r0
     bleq    output_string       ; print player color 3 times
     bleq    output_string
     bleq    output_string 
-    ldreq   r0, r7              ; print cell color once
+    ldreq   r0, [r7, #0]              ; print cell color once
     bleq    output_character
     ldrne   r0, r6              ; else, 
     blne    layer_loop          ; print cell color five times 
@@ -508,18 +508,18 @@ south_loop:
     ; print cell 1
     cmp     r4, r1              
     ite     eq                  ; if player_pos(r1) equal to cell num (r4)
-    ldreq   r0, r7              ; print cell color once
+    ldreq   r0, [r7, #0]              ; print cell color once
     bleq    output_character
     ldreq   r3, playerdatap     ; load playerdata into r3 from r4
-    andeq   r3, r3, 0x00FF0000  ; mask color byte
+    andeq   r3, r3, #0x00FF0000  ; mask color byte
     roreq   r3, r3, #16         ; right shift
     bleq    find_op_color       ; player color from find_op_color to r0
     bleq    output_string       ; print player color 3 times
     bleq    output_string
     bleq    output_string 
-    ldreq   r0, r7              ; print cell color once
+    ldreq   r0, [r7, #0]              ; print cell color once
     bleq    output_character
-    ldrne   r0, r7              ; else, 
+    ldrne   r0, [r7, #0]              ; else, 
     blne    layer_loop          ; print cell color five times 
     ldr     r0, sidebarp        ; print sidebar
     bl      output_character
@@ -531,7 +531,7 @@ south_loop:
     ldreq   r0, r8              ; print cell color once
     bleq    output_character
     ldreq   r3, playerdatap     ; load playerdata into r3 from r4
-    andeq   r3, r3, 0x00FF0000  ; mask color byte
+    andeq   r3, r3, #0x00FF0000  ; mask color byte
     roreq   r3, r3, #16         ; right shift
     bleq    find_op_color       ; player color from find_op_color to r0
     bleq    output_string       ; print player color 3 times
@@ -539,7 +539,7 @@ south_loop:
     bleq    output_string 
     ldreq   r0, r8              ; print cell color once
     bleq    output_character
-    ldrne   r0, r8              ; else, 
+    ldrne   r0, [r8, #0]              ; else, 
     blne    layer_loop          ; print cell color five times 
     ldr     r0, sidebarp        ; print sidebar
     bl      output_character
@@ -548,19 +548,19 @@ south_loop:
     add     r4, r4, #1          ; iterate cell num
 
     ; LAYER THREE
-    ldr     r0, r6              ; input for layer_loop
+    ldr     r0, [r6, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
-    ldr     r0, r7              ; input for layer_loop
+    ldr     r0, [r7, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
-    ldr     r0, r8              ; input for layer_loop
+    ldr     r0, [r8, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
     ldr     r0, nlp             ; print new line
     bl      output_string
@@ -610,25 +610,25 @@ north_loop:
     ldr     r8, r0              ; cell 2 pointer to ansi color now in r8        
 
     ; LAYER ONE
-    ldr     r0, r6              ; input for layer_loop
+    ldr     r0, [r6, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
-    ldr     r0, r7              ; input for layer_loop
+    ldr     r0, [r7, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
-    ldr     r0, r8              ; input for layer_loop
+    ldr     r0, [r8, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
     ldr     r0, nlp             ; print new line
     bl      output_string
 
     ; LAYER TWO    
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ; print cell 0
@@ -637,13 +637,13 @@ north_loop:
     ldreq   r0, r6              ; print cell color once
     bleq    output_character
     ldreq   r3, playerdatap     ; load playerdata into r3 from r4
-    andeq   r3, r3, 0x00FF0000  ; mask color byte
+    andeq   r3, r3, #0x00FF0000  ; mask color byte
     roreq   r3, r3, #16         ; right shift
     bleq    find_op_color       ; player color from find_op_color to r0
     bleq    output_string       ; print player color 3 times
     bleq    output_string
     bleq    output_string 
-    ldreq   r0, r7              ; print cell color once
+    ldreq   r0, [r7, #0]              ; print cell color once
     bleq    output_character
     ldrne   r0, r6              ; else, 
     blne    layer_loop          ; print cell color five times 
@@ -654,18 +654,18 @@ north_loop:
     ; print cell 1
     cmp     r4, r1              
     ite     eq                  ; if player_pos(r1) equal to cell num (r4)
-    ldreq   r0, r7              ; print cell color once
+    ldreq   r0, [r7, #0]              ; print cell color once
     bleq    output_character
     ldreq   r3, playerdatap     ; load playerdata into r3 from r4
-    andeq   r3, r3, 0x00FF0000  ; mask color byte
+    andeq   r3, r3, #0x00FF0000  ; mask color byte
     roreq   r3, r3, #16         ; right shift
     bleq    find_op_color       ; player color from find_op_color to r0
     bleq    output_string       ; print player color 3 times
     bleq    output_string
     bleq    output_string 
-    ldreq   r0, r7              ; print cell color once
+    ldreq   r0, [r7, #0]              ; print cell color once
     bleq    output_character
-    ldrne   r0, r7              ; else, 
+    ldrne   r0, [r7, #0]              ; else, 
     blne    layer_loop          ; print cell color five times 
     ldr     r0, sidebarp        ; print sidebar
     bl      output_character
@@ -677,7 +677,7 @@ north_loop:
     ldreq   r0, r8              ; print cell color once
     bleq    output_character
     ldreq   r3, playerdatap     ; load playerdata into r3 from r4
-    andeq   r3, r3, 0x00FF0000  ; mask color byte
+    andeq   r3, r3, #0x00FF0000  ; mask color byte
     roreq   r3, r3, #16         ; right shift
     bleq    find_op_color       ; player color from find_op_color to r0
     bleq    output_string       ; print player color 3 times
@@ -685,7 +685,7 @@ north_loop:
     bleq    output_string 
     ldreq   r0, r8              ; print cell color once
     bleq    output_character
-    ldrne   r0, r8              ; else, 
+    ldrne   r0, [r8, #0]              ; else, 
     blne    layer_loop          ; print cell color five times 
     ldr     r0, sidebarp        ; print sidebar
     bl      output_character
@@ -694,19 +694,19 @@ north_loop:
     add     r4, r4, #1          ; iterate cell num
 
     ; LAYER THREE
-    ldr     r0, r6              ; input for layer_loop
+    ldr     r0, [r6, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
-    ldr     r0, r7              ; input for layer_loop
+    ldr     r0, [r7, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
-    ldr     r0, r8              ; input for layer_loop
+    ldr     r0, [r8, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
     ldr     r0, nlp             ; print new line
     bl      output_string
@@ -756,25 +756,25 @@ west_loop:
     ldr     r8, r0              ; cell 2 pointer to ansi color now in r8        
 
     ; LAYER ONE
-    ldr     r0, r6              ; input for layer_loop
+    ldr     r0, [r6, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
-    ldr     r0, r7              ; input for layer_loop
+    ldr     r0, [r7, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
-    ldr     r0, r8              ; input for layer_loop
+    ldr     r0, [r8, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
     ldr     r0, nlp             ; print new line
     bl      output_string
 
     ; LAYER TWO    
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
     ; print cell 0
@@ -783,13 +783,13 @@ west_loop:
     ldreq   r0, r6              ; print cell color once
     bleq    output_character
     ldreq   r3, playerdatap     ; load playerdata into r3 from r4
-    andeq   r3, r3, 0x00FF0000  ; mask color byte
+    andeq   r3, r3, #0x00FF0000  ; mask color byte
     roreq   r3, r3, #16         ; right shift
     bleq    find_op_color       ; player color from find_op_color to r0
     bleq    output_string       ; print player color 3 times
     bleq    output_string
     bleq    output_string 
-    ldreq   r0, r7              ; print cell color once
+    ldreq   r0, [r7, #0]              ; print cell color once
     bleq    output_character
     ldrne   r0, r6              ; else, 
     blne    layer_loop          ; print cell color five times 
@@ -799,19 +799,20 @@ west_loop:
     
     ; print cell 1
     cmp     r4, r1              
-    ite     eq                  ; if player_pos(r1) equal to cell num (r4)
-    ldreq   r0, r7              ; print cell color once
+    itttt    eq                  ; if player_pos(r1) equal to cell num (r4)
+    ldreq   r0, [r7, #0]              ; print cell color once
     bleq    output_character
     ldreq   r3, playerdatap     ; load playerdata into r3 from r4
-    andeq   r3, r3, 0x00FF0000  ; mask color byte
+    andeq   r3, r3, #0x00FF0000  ; mask color byte
+    it		eq
     roreq   r3, r3, #16         ; right shift
     bleq    find_op_color       ; player color from find_op_color to r0
     bleq    output_string       ; print player color 3 times
     bleq    output_string
     bleq    output_string 
-    ldreq   r0, r7              ; print cell color once
+    ldreq   r0, [r7, #0]              ; print cell color once
     bleq    output_character
-    ldrne   r0, r7              ; else, 
+    ldrne   r0, [r7, #0]              ; else, 
     blne    layer_loop          ; print cell color five times 
     ldr     r0, sidebarp        ; print sidebar
     bl      output_character
@@ -823,7 +824,7 @@ west_loop:
     ldreq   r0, r8              ; print cell color once
     bleq    output_character
     ldreq   r3, playerdatap     ; load playerdata into r3 from r4
-    andeq   r3, r3, 0x00FF0000  ; mask color byte
+    andeq   r3, r3, #0x00FF0000  ; mask color byte
     roreq   r3, r3, #16         ; right shift
     bleq    find_op_color       ; player color from find_op_color to r0
     bleq    output_string       ; print player color 3 times
@@ -831,7 +832,7 @@ west_loop:
     bleq    output_string  
     ldreq   r0, r8              ; print cell color once
     bleq    output_character
-    ldrne   r0, r8              ; else, 
+    ldrne   r0, [r8, #0]              ; else, 
     blne    layer_loop          ; print cell color five times 
     ldr     r0, sidebarp        ; print sidebar
     bl      output_character
@@ -840,19 +841,19 @@ west_loop:
     add     r4, r4, #1          ; iterate cell num
 
     ; LAYER THREE
-    ldr     r0, r6              ; input for layer_loop
+    ldr     r0, [r6, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
-    ldr     r0, r7              ; input for layer_loop
+    ldr     r0, [r7, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
 
-    ldr     r0, r8              ; input for layer_loop
+    ldr     r0, [r8, #0]              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    mov     r0, sidebarp         ; print sidebar
+    ldr     r0, sidebarp         ; print sidebar
     bl      output_character
     ldr     r0, nlp             ; print new line
     bl      output_string
@@ -883,4 +884,4 @@ bottom_chrome:
     ; print move val string
 
     pop     {r4-r12, lr}
-    bx      pc, lr
+    bx      lr
