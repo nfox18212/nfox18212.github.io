@@ -1,4 +1,17 @@
-    .data
+    .cdecls C,NOLIST,"debug.h"
+
+
+newl .macro				; print a newline
+	push 	{r0}
+	mov		r0, #carreturn
+	bl		output_character
+	mov		r0, #newline
+	bl		output_character
+	pop		{r0}
+	.endm
+
+
+	.data
     
 ; background (squares)
 redbg:      .string 27,"[48;5;31H"
@@ -56,8 +69,10 @@ movesStrp:      .word movesStr
 disp_matp:      .word disp_mat
 adj_matp:       .word adj_mat
 atypep:         .word atype
-nlp             .word new_line
-twoSpacesp      .word twoSpaces
+nlp:            .word new_line
+twoSpacesp:     .word twoSpaces
+
+
 
 display_init:                       ; creates initial display matrix, player at cell 4
     push    {r4-r12, lr}
@@ -319,6 +334,33 @@ UPDATE_DISPLAY:                     ; TAKE IN ACTION AND ADJUST MATRIX ACCORDING
     and     r0, r4, #0x00FF         ; mask position
     bl      extract_cid             ; returns face (r0), row (r1), col (r2)
     bl      player_pos              ; r1 HOLDS PLAYER POSITION
+
+
+  	;moveq 	r9, #1  ; if faces are equal we haven't changed faces, so just put 1 in action type
+	;movne 	r9, #2  ; if faces are inequal we have changed faces, so put 2 in atype
+
+	; okay sebastien, this is what you wanted.  if you want to branch without linking, remove the lines with
+	; "it eq" and the l in "bleq"
+
+
+	ldr		r5, atypep	
+	cmp		r5, #1					; if last action type was a 1, its just a normal move
+	it		eq
+	bleq	same_face
+	beq		skip
+
+	cmp		r5, #2					; if last action type was a 2, need to animate changing faces
+	it		eq
+	bleq	rotate_anim
+	beq		skip
+	
+	cmp		r5, #3					; if last action type was a 3, we're swapping colors
+	it		eq
+	bleq	place_color
+
+skip:
+	pop		{r4-r12, lr}
+	bx		lr
 
     ; needs conditional: move or place color? 
 place_color:

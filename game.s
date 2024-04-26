@@ -112,7 +112,7 @@ convloop:
 	movne	r12, #1
 
 	cmp		r12, #1
-	itttt	eq ; str address is in r10
+	itt	eq ; str address is in r10
 	addeq	r0, r0, #0x30	; convert to character
 	streq	r0, [r9], #1	; post-index store
 
