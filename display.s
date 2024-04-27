@@ -418,7 +418,8 @@ OUTPUT_SCREEN:                      ; print cells to screen with player
 
     ldr     r4, playerdatap
     ldr		r10, [r4]               ; r10 holds playaer position
-    and     r0, r10, #0x0FFF        ; mask position
+    mov		r11, #0xFFF
+    and     r0, r10, r11        ; mask position
     bl      extract_cid             ; returns face (r0), row (r1), col (r2)
     bl      player_pos              ; r1 HOLDS PLAYER POSITION
     and     r2, r10, #0xFF000000    ; mask orientation
