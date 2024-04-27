@@ -42,10 +42,12 @@ end_game:
 	mov		r5, #2
 	.endif
 	cmp		r5, #1			; this means the user lost and ran out of time
-	itee	eq
+	it		eq
 	ldreq	r0, losestrp	; tell the user they lost
-	ldrne	r0, winstrp		; tell the user they won
-	blne	led_dance
+	cmp		r5, #2			; this means they won
+	itt		eq
+	ldreq	r0, winstrp		; tell the user they won
+	blneq	led_dance
 	bl		output_string
 	; find out what the user wants to do
 

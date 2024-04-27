@@ -69,6 +69,7 @@ gccrashstr:	.string		"A player orientation greater than 4 was specified in get_c
 globals:    .byte 0x0
 
 	.global cells
+	.global endgame
 
     .text
 
@@ -84,6 +85,9 @@ getclcrashp:	.word crashstr
 gccrashp:		.word gccrashstr
 alistp:     	.word alist
 cellp:			.word cells
+endgamep:		.word endgame
+
+
 
 set_color:
 	; given cell ID in r0
@@ -217,8 +221,38 @@ board_iloop:
 	it		eq
 	addeq	r8, r8, #1	; add 1 to the number of completed sides if they are 8 matching colors
 	add		r9, r9, #1	; add 1 to the number of faces we've looked at 
-	
 
+	cmp		r9, #6		; check to see if we've looked at all faces
+	bne		board_oloop	; loop again if we haven't looked at every face
+
+	; now we need to analyze the results
+	; check to see how many faces were completed
+	cmp		r8, #4
+	it		ge			; if there are 4 or more faces completed, illuminate 4 LEDs
+	movge	r0, #0xF
+						; otherwise, illuminate as many LEDs as there are faces completed
+	cmp		r8, #3
+	it		eq
+	moveq	r0, #7
+
+	cmp		r8, #2
+	it		eq
+	moveq	r0, #3
+
+	cmp		r8, #1
+	it		eq
+	moveq	r0, #1
+
+	bl		illuminate_LEDs	; light 'em up!
+	
+	; if 6 sides have been completed, send the end game signal
+	cmp		r8, #6
+	ittt	eq
+	moveq	r10, #2
+	ldreq	r4, endgamep
+	strbeq	r10, [r4, #0]
+	
+	; should be able to return now
 
 	pop		{r4-r12, lr}
 	bx		lr
