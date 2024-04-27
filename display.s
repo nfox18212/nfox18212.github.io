@@ -150,28 +150,26 @@ op_cell_row:
     ; LAYER ONE
     ldr     r0, [r6]              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    ldr     r0, sidebarp         ; print sidebar
-    ldr		r0, [r0]
+    ldr     r1, sidebarp         ; print sidebar
+    ldr		r0, [r1]
     bl      output_character
 
     ldr     r0, [r7]              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    ldr     r0, sidebarp         ; print sidebar
-    ldr		r0, [r0]
+    ldr     r1, sidebarp         ; print sidebar
+    ldr		r0, [r1]
     bl      output_character
 
     ldr     r0, [r8]              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    ldr     r0, sidebarp         ; print sidebar
-    ldr		r0, [r0]
+    ldr     r1, sidebarp         ; print sidebar
+    ldr		r0, [r1]
     bl      output_character
-    ldr     r0, nlp             ; print new line
-    ldr		r0, [r0]
-    bl      output_string
+    newl
 
     ; LAYER TWO
-    ldr     r0, sidebarp         ; print sidebar
-    ldr		r0, [r0]
+    ldr     r1, sidebarp         ; print sidebar
+    ldr		r0, [r1]
     bl      output_character
 
     ; print cell 0
@@ -195,8 +193,8 @@ cell0_if:
     bl    	output_string
 
 after_cell0:
-	ldr     r0, sidebarp         ; print sidebar
-    ldr		r0, [r0]
+	ldr     r1, sidebarp         ; print sidebar
+    ldr		r0, [r1]
     bl      output_character
     add     r4, r4, #1          ; iterate cell num
 
@@ -220,8 +218,8 @@ cell1_if:
     ldr	   	r0, [r7]              ; print cell color once
     bl    	output_string
 after_cell1:
-	ldr     r0, sidebarp         ; print sidebar
-    ldr		r0, [r0]
+	ldr     r1, sidebarp         ; print sidebar
+    ldr		r0, [r1]
     bl      output_character
     add     r4, r4, #1          ; iterate cell num
 
@@ -244,32 +242,30 @@ cell2_if:
     ldr	   	r0, [r8]              ; print cell color once
     bl    	output_string
 after_cell2:
-	ldr     r0, sidebarp         ; print sidebar
-    ldr		r0, [r0]
+	ldr     r1, sidebarp         ; print sidebar
+    ldr		r0, [r1]
     bl      output_character
     add     r4, r4, #1          ; iterate cell num
 
     ; LAYER THREE
     ldr     r0, [r6]              ; input for layer_loop
     bl      layer_loop          ; print cell 0 five times
-    ldr     r0, sidebarp         ; print sidebar
-    ldr		r0, [r0]
+    ldr     r1, sidebarp         ; print sidebar
+    ldrb	r0, [r1]
     bl      output_character
 
     ldr     r0, [r7]              ; input for layer_loop
     bl      layer_loop          ; print cell 1 five times
-    ldr     r0, sidebarp         ; print sidebar
-    ldr		r0, [r0]
+    ldr     r1, sidebarp         ; print sidebar
+    ldr		r0, [r1]
     bl      output_character
 
     ldr     r0, [r8]              ; input for layer_loop
     bl      layer_loop          ; print cell 2 five times
-    ldr     r0, sidebarp         ; print sidebar
-    ldr		r0, [r0]
+    ldr     r1, sidebarp         ; print sidebar
+    ldrb	r0, [r1]
     bl      output_character
-    ldr     r0, nlp             ; print new line
-    ldr		r0, [r0]
-    bl      output_string
+    newl
     pop 	{lr}
 
 player_pos:                         ; translates player position (r1 row, r2 col) into a value 0-8, return in r1
@@ -380,7 +376,8 @@ place_color:
     movt    r6, #0xF8FF             ; initial mask 0x1111100011111111 1111111111111111
     bl      get_color               ; r0 HOLDS CELL COLOR
 
-    mul     r7, r1, #3              ; player_pos * 3
+	mov		r10, #3
+    mul     r7, r1, r10             ; player_pos * 3
     ror     r6, r6, r7              ; rotate mask right by number of cell (r1 * 3)
     and     r10, r10, r6            ; clear those bits
 
@@ -426,13 +423,12 @@ OUTPUT_SCREEN:                      ; print cells to screen with player
     and     r2, r10, #0xFF000000    ; mask orientation
     ror     r2, r2, #24             ; r2 HOLDS PLAYER'S ORIENTATION
 
-    ldr     r0, nlp             ; print new line
-    ldr		r0, [r0]
-    bl      output_string
+    newl
 
     ldr     r0, topbotbarp
     bl      output_string       ; output top bar
-    ldr     r0, sidebarp
+    ldr     r2, sidebarp
+    ldr		r0, [r2]
     bl      output_character    ; output side bar
 
     mov     r4, #0x0            ; this will be the cell counter
@@ -507,12 +503,10 @@ east_loop:
     beq     bottom_chrome        ; skip to exit_op_loop
     add     r5, r5, #1          ; iterate row num
     lsl     r9, r9, #21         ; move mask -21 bits
-    ldr     r0, midbarp         ; print midbar
-    ldr		r0, [r0]
+    ldr     r1, midbarp         ; print midbar
+    ldr		r0, [r1]
     bl 		output_string
-    ldr     r0, nlp             ; print new line
-    ldr		r0, [r0]
-    bl		output_string
+    newl
     b       east_loop           ; jump back to east_loop
 
 south_loop:
@@ -558,12 +552,10 @@ south_loop:
     beq     bottom_chrome        ; skip to exit_op_loop
     add     r5, r5, #1          ; iterate row num
     lsl     r9, r9, #3          ; move mask -3 bits
-    ldr     r0, midbarp         ; print midbar
-    ldr		r0, [r0]
+    ldr     r1, midbarp         ; print midbar
+    ldr		r0, [r1]
     bl 		output_string
-    ldr     r0, nlp             ; print new line
-    ldr		r0, [r0]
-    bl		output_string
+    newl
     b       south_loop          ; jump back to south_loop
 
 north_loop:
@@ -610,11 +602,9 @@ north_loop:
     add     r5, r5, #1          ; iterate row num
     ror     r9, r9, #3          ; move mask +3 bits
     ldr     r0, midbarp         ; print midbar
-    ldr		r0, [r0]
+    ldr		r0, [r1]
     bl 		output_string
-    ldr     r0, nlp             ; print new line
-    ldr		r0, [r0]
-    bl		output_string
+    newl
     b       south_loop          ; jump back to south_loop
 
 west_loop:
@@ -660,37 +650,33 @@ west_loop:
     beq     bottom_chrome        ; skip to exit_op_loop
     add     r5, r5, #1          ; iterate row num
     ror     r9, r9, #21         ; move mask +21 bits
-    ldr     r0, midbarp         ; print midbar
-    ldr		r0, [r0]
+    ldr     r1, midbarp         ; print midbar
+    ldr		r0, [r1]
     bl 		output_string
-    ldr     r0, nlp             ; print new line
-    ldr		r0, [r0]
-    bl		output_string
+    newl
     b       south_loop          ; jump back to south_loop
 
 bottom_chrome:
     ldr     r0, topbotbarp
-    ldr		r0, [r0]
+    ldr		r0, [r1]
     bl      output_string
-    ldr     r0, nlp
-    ldr		r0, [r0]
-    bl      output_string
+    newl
 
     ; check for anim loop
     ; branch back if needed 
 
-    ldr     r0, timeStrp            ; print time
-    ldr     r0, [r0]
+    ldr     r1, timeStrp            ; print time
+    ldr     r0, [r1]
     bl      output_string
-    ldr     r0, gametimep
-    ldr     r0, [r0]
+    ldr     r1, gametimep
+    ldr     r0, [r1]
     bl      int2string
     bl      output_string
-    ldr     r0, twoSpacesp          ; print spaces
-    ldr     r0, [r0]
+    ldr     r1, twoSpacesp          ; print spaces
+    ldr     r0, [r1]
     bl      output_string
-    ldr     r0, movesStrp           ; print moves
-    ldr     r0, [r0]
+    ldr     r1, movesStrp           ; print moves
+    ldr     r0, [r1]
     bl      int2string
     bl      output_string
 

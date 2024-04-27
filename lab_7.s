@@ -80,6 +80,7 @@ atype:      	.byte   0x0         ; describes the last type of action.  1 for mov
 	.global nextMovement
 	.global	gameTime
 	.global createSeed
+	.global moves
 	.global timeset
 
 	.text
