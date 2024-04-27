@@ -365,6 +365,7 @@ UPDATE_DISPLAY:                     ; TAKE IN ACTION AND ADJUST MATRIX ACCORDING
 	cmp		r5, #3					; if last action type was a 3, we're swapping colors
 	beq		place_color
 
+	bne		OUTPUT_SCREEN
 
     ; needs conditional: move or place color? 
 place_color:
