@@ -109,7 +109,7 @@ atype:      	.byte   0x0         ; describes the last type of action.  1 for mov
 	.global	seed
 	.global swap
 
-	.global update
+	.global UPDATE_DISPLAY
 	.global end_game
 	.global	move
 
@@ -159,9 +159,6 @@ poll1:
 	movt	r4, #0x4000
 	ldr		r5, [r4, #0x3FC] ; grab GPIOD_DATA
 
-	.if debug!=0
-	mov		r5, #8
-	.endif
 
 	; look for how long to play the game for
 	and		r8, r5, #8		; SW2
@@ -230,7 +227,7 @@ mainloop:
 	beq		mainloop
 	mov		r5, #0				; reset tick
 	strb	r5, [r4, #0]
-	bl		update				; render the board and any changes
+	bl		UPDATE_DISPLAY				; render the board and any changes
 	bl		check_board_state	; check the board state to see if any/how many faces are completed, and if we should end the game
 	; check to see if we should end the game
 	ldrb	r9, [r8, #0]
