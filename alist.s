@@ -68,7 +68,11 @@ gccrashstr:	.string		"A player orientation greater than 4 was specified in get_c
 
 globals:    .byte 0x0
 
+	.global cells
+	.global endgame
+
     .text
+
     .global set_color
     .global get_color
     .global get_cell
@@ -80,6 +84,10 @@ globals:    .byte 0x0
 getclcrashp:	.word crashstr
 gccrashp:		.word gccrashstr
 alistp:     	.word alist
+cellp:			.word cells
+endgamep:		.word endgame
+
+
 
 set_color:
 	; given cell ID in r0
@@ -184,6 +192,67 @@ check_board_state:
 
 	push	{r4-r12, lr}
 
+	; get the pointer to the list of cells
+	ldr		r4, cellp
+	mov		r8, #0		; we'll use this to represent the number of completed faces
+	mov		r9, #0 		; we'll use this to represent the number of faces we've looked at
+
+board_oloop:
+	; first determine the color of the face
+	ldrh	r0, [r4], #2; 2 bytes to increment by 1 halfword
+	bl		get_color	; grab the color of the first cell in the current face - we'll match this to the rest of the cells
+	mov		r7, r0		; preserve it in r7
+	mov		r6, #8		; the number of other cells we need to loop and look at the color of
+	mov		r5, #0		; the number of cells with matching colors.  a face is completed there are 8 matches to the first color
+
+board_iloop:
+	; get the next cell
+	ldrh	r0, [r4], #2
+	; get the color of the cell
+	bl		get_color
+	cmp		r0, r7		; see if the color matches
+	it		eq
+	addeq	r5, r5, #1	; add 1 to number of matches
+	sub		r6, r6, #1	; subtract 1 from the number of cells we need to look at
+	cmp		r6, #0		; see if its 0
+	beq		board_iloop	; loop if it is
+
+	cmp		r5, #8		; look at the number of matching cells
+	it		eq
+	addeq	r8, r8, #1	; add 1 to the number of completed sides if they are 8 matching colors
+	add		r9, r9, #1	; add 1 to the number of faces we've looked at 
+
+	cmp		r9, #6		; check to see if we've looked at all faces
+	bne		board_oloop	; loop again if we haven't looked at every face
+
+	; now we need to analyze the results
+	; check to see how many faces were completed
+	cmp		r8, #4
+	it		ge			; if there are 4 or more faces completed, illuminate 4 LEDs
+	movge	r0, #0xF
+						; otherwise, illuminate as many LEDs as there are faces completed
+	cmp		r8, #3
+	it		eq
+	moveq	r0, #7
+
+	cmp		r8, #2
+	it		eq
+	moveq	r0, #3
+
+	cmp		r8, #1
+	it		eq
+	moveq	r0, #1
+
+	bl		illuminate_LEDs	; light 'em up!
+	
+	; if 6 sides have been completed, send the end game signal
+	cmp		r8, #6
+	ittt	eq
+	moveq	r10, #2
+	ldreq	r4, endgamep
+	strbeq	r10, [r4, #0]
+	
+	; should be able to return now
 
 	pop		{r4-r12, lr}
 	bx		lr

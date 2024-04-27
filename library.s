@@ -212,9 +212,9 @@ illuminate_LEDs:
 
 	; we are assuming that there's input in r0 to store in memory
 
-	mov		r1,#0x5000	; Your code is placed here
-	movt	r1,#0x4000	; address of port B
-	strb	r0, [r1, #0x3FC]	; address of data reg
+	mov		r4, #0x5000			; Your code is placed here
+	movt	r4, #0x4000			; address of port B
+	strb	r0, [r4, #0x3FC]	; address of data reg
 	; after this, there's not much that needs to be done
 
 	POP {r4-r12,lr}  	; Restore registers from stack
@@ -401,7 +401,7 @@ rloop:						; Recieve loop
 
 
 int2string:
-	; limitation: only will work for numbers with at most 3 digits.
+	; limitation: only will work for numbers with at most 4 digits.
 	push 	{r4-r12,lr} 	; store any registers in the range of r4 through r12
 							; that are used in your routine.  include lr if this
 							; routine calls another routine.
