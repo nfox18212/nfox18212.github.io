@@ -44,6 +44,7 @@ adj_mat:        .word 0x0
 
     .global     playerdata
     .global     atype
+    .global     nextMovement
 
     .text
 
@@ -52,7 +53,6 @@ adj_mat:        .word 0x0
     .global		get_color
     .global		set_color
     .global		extract_cid
-    .global     nextMovement
 
 redbgp          .word redbg
 greenbgp        .word greenbg
@@ -72,6 +72,12 @@ adj_matp:       .word adj_mat
 atypep:         .word atype
 nlp:            .word new_line
 twoSpacesp:     .word twoSpaces
+
+update:
+    push    {lr}
+    bl      UPDATE_DISPLAY
+    pop     {lr}
+    bx      lr
 
 display_init:                       ; creates initial display matrix, player at cell 4
     push    {r4-r12, lr}
@@ -344,10 +350,10 @@ UPDATE_DISPLAY:                     ; TAKE IN ACTION AND ADJUST MATRIX ACCORDING
 
 	ldr		r5, atypep	
 	cmp		r5, #1					; if last action type was a 1, its just a normal move
-	beq	same_face
+	beq	    same_face
 
 	cmp		r5, #2					; if last action type was a 2, need to animate changing faces
-	beq	rotate_anim
+	beq	    rotate_anim
 	
 	cmp		r5, #3					; if last action type was a 3, we're swapping colors
 	beq	place_color

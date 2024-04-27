@@ -53,8 +53,8 @@ seeddatap:		.word	seeddata
 gametimep:		.word 	gameTime
 createSeedp:	.word 	createSeed
 timesetp:		.word	timeset
-playerdatap:	.word playerdata
-endgamep:		.word endgame
+playerdatap:	.word 	playerdata
+endgamep:		.word 	endgame
 
 UART0_Handler:
 
