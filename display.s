@@ -489,6 +489,7 @@ east_loop:
     ; replace color vals with pointers to ansi strings
     mov     r3, r6
     bl      find_op_color
+    ; DANGER!  THIS INSTRUCTION IS CAUSING A FAULT DUE TO SOMETHING IN FIND_OP_COLOR
     ldr     r6, [r0]              ; cell 0 pointer to ansi color now in r6
     mov     r3, r7
     bl      find_op_color
