@@ -52,6 +52,7 @@ adj_mat:        .word 0x0
     .global		get_color
     .global		set_color
     .global		extract_cid
+    .global     nextMovement
 
 redbgp          .word redbg
 greenbgp        .word greenbg
@@ -71,8 +72,6 @@ adj_matp:       .word adj_mat
 atypep:         .word atype
 nlp:            .word new_line
 twoSpacesp:     .word twoSpaces
-
-
 
 display_init:                       ; creates initial display matrix, player at cell 4
     push    {r4-r12, lr}
@@ -96,33 +95,33 @@ display_init:                       ; creates initial display matrix, player at 
     orr     r2, r2, r0
 
     ; ROW 1
-    mov     r0, #0x006E             ; cell 102
+    mov     r0, #0x006E             ; cell 110
     bl      get_color
     lsl     r0, r0, #15     		; load disp_matp, offset to cell 2
     orr     r2, r2, r0
 
-    mov     r0, #0x006F             ; cell 102
+    mov     r0, #0x006F             ; cell 111
     bl      get_color
     lsl     r0, r0, #12     		; load disp_matp, offset to cell 2
     orr     r2, r2, r0
 
-    mov     r0, #0x0070             ; cell 102
+    mov     r0, #0x0070             ; cell 112
     bl      get_color
     lsl     r0, r0, #9     		; load disp_matp, offset to cell 2
     orr     r2, r2, r0
 
     ; ROW 2
-    mov     r0, #0x0078             ; cell 102
+    mov     r0, #0x0078             ; cell 120
     bl      get_color
     lsl     r0, r0, #6     		; load disp_matp, offset to cell 2
     orr     r2, r2, r0
 
-    mov     r0, #0x0079             ; cell 102
+    mov     r0, #0x0079             ; cell 121
     bl      get_color
     lsl     r0, r0, #3     		; load disp_matp, offset to cell 2
     orr     r2, r2, r0
 
-    mov     r0, #0x007A             ; cell 102
+    mov     r0, #0x007A             ; cell 122
     bl      get_color
     orr     r2, r2, r0
 
@@ -233,6 +232,8 @@ cell2_if:
 after_cell2:
 	ldr     r0, sidebarp         ; print sidebar
     ldr		r0, [r0]
+    ldr     r0, nlp             ; print new line
+    ldr		r0, [r0]
     bl      output_character
     add     r4, r4, #1          ; iterate cell num
 
@@ -335,34 +336,22 @@ UPDATE_DISPLAY:                     ; TAKE IN ACTION AND ADJUST MATRIX ACCORDING
     bl      extract_cid             ; returns face (r0), row (r1), col (r2)
     bl      player_pos              ; r1 HOLDS PLAYER POSITION
 
-
-  	;moveq 	r9, #1  ; if faces are equal we haven't changed faces, so just put 1 in action type
-	;movne 	r9, #2  ; if faces are inequal we have changed faces, so put 2 in atype
+  	; moveq 	r9, #1  ; if faces are equal we haven't changed faces, so just put 1 in action type
+	; movne 	r9, #2  ; if faces are inequal we have changed faces, so put 2 in atype
 
 	; okay sebastien, this is what you wanted.  if you want to branch without linking, remove the lines with
 	; "it eq" and the l in "bleq"
 
-
 	ldr		r5, atypep	
 	cmp		r5, #1					; if last action type was a 1, its just a normal move
-	it		eq
-	bleq	same_face
-	beq		skip
+	beq	same_face
 
 	cmp		r5, #2					; if last action type was a 2, need to animate changing faces
-	it		eq
-	bleq	rotate_anim
-	beq		skip
+	beq	rotate_anim
 	
 	cmp		r5, #3					; if last action type was a 3, we're swapping colors
-	it		eq
-	bleq	place_color
+	beq	place_color
 
-skip:
-	pop		{r4-r12, lr}
-	bx		lr
-
-    ; needs conditional: move or place color? 
 place_color:
     ldr     r5, disp_matp           ; load display matrix
     ldr		r10, [r5]
@@ -373,13 +362,14 @@ place_color:
     mov     r7, #3                  ; #3
     mul     r8, r1, r7              ; r1 * 3
     ror     r6, r6, r7              ; rotate mask right by number of cell (r1 * 3)
-    and     r10, r10, r6              ; clear those bits
+    and     r10, r10, r6            ; clear those bits
 
+    ; wtf was i doing here? review this seb
     mov     r9, #8                  ; #8
     sub     r9, r9, r0              ; 8 - r0
     mul     r9, r9, r7              ; (8 - r0) * 3
     lsl     r0, r0, r9              ; left shift r0 by (8 - r0) * 3
-    orr     r10, r10, r0              ; insert new color
+    orr     r10, r10, r0            ; insert new color
     str     r10, [r5]           ; store disp_mat with new color
     
     bl      OUTPUT_SCREEN
@@ -397,14 +387,151 @@ same_face:
     bl      OUTPUT_SCREEN
 
 rotate_anim:                        ; initiates cube rotation
-    ; see new face
-    ; find what direction
-    ; set player pos to 1111 so it doesnt print
+    push    {r4-r12}
+    ldr     r6, disp_matp           ; r6 pointer to disp_mat
 
-anim_loop:                          ; rebuild disp_rows row by row
+    mul     r0, r0, #100            ; multiply face num by 100
 
-    ; if counter not equal  to 2, b anim_loop
-    ; set player pos to new player pos
+    mov		r4, #0x0                ; face accumulator
+
+    ; ROW 0
+    bl      get_color               ; cell 00
+    lsl		r0, r0, #24				; left shift to cell 0 position
+    orr     r4, r4, r0
+
+    add     r0, r0, #1              ; cell 01
+    bl      get_color
+    lsl 	r0, r0, #21				; left shift to cell 1
+    orr     r4, r4, r0
+
+    add     r0, r0, #1              ; cell 02
+    bl      get_color
+    lsl     r0, r0, #18     		
+    orr     r4, r4, r0
+
+    ; ROW 1
+    add     r0, r0, #8              ; cell 10
+    bl      get_color
+    lsl     r0, r0, #15     		
+    orr     r4, r4, r0
+
+    add     r0, r0, #1              ; cell 11
+    bl      get_color
+    lsl     r0, r0, #12 
+    orr     r4, r4, r0
+
+    add     r0, r0, #1              ; cell 12
+    bl      get_color
+    lsl     r0, r0, #9     		
+    orr     r4, r4, r0
+
+    ; ROW 2
+    add     r0, r0, #8              ; cell 20
+    bl      get_color
+    lsl     r0, r0, #6     		
+    orr     r4, r4, r0
+
+    add     r0, r0, #1              ; cell 21
+    bl      get_color
+    lsl     r0, r0, #3     		
+    orr     r4, r4, r0
+
+    add     r0, r0, #1              ; cell 22
+    bl      get_color
+    orr     r4, r4, r0
+
+    lsl     r1, r1, #28             ; shift player pos to front
+    orr     r4, r4, r1              ; insert player pos into acc
+
+   	ldr		r2, adj_matp
+   	str		r4, [r2]                ; store adj mat
+
+    str     r2, [r6]                ; store adj mat into disp mat
+
+    pop     {r4-r12}
+
+    ; store movement direction
+    
+;north_anim:
+    ; shift disp right 9
+    ; mask adj 6, 7, 8
+    ; shift left 18
+    ; insert adj -> disp
+    ; OUTPUT
+
+    ; shift disp right 9
+    ; mask adj 2, 3, 4
+    ; shift left 9
+    ; insert adj -> disp
+    ; OUTPUT
+
+    ; shift disp right 9
+    ; mask adj 0, 1, 2
+    ; insert adj -> disp
+    ; insert player pos
+    ; OUTPUT
+
+;south_anim:
+    ; shift disp left 9
+    ; mask adj 0, 1, 2
+    ; shift right 18
+    ; insert adj -> disp
+    ; OUTPUT
+
+    ; shift disp left 9
+    ; mask adj 3, 4, 5
+    ; shift right 9
+    ; insert adj -> disp
+    ; OUTPUT
+
+    ; shift disp left 9
+    ; mask adj 6, 7, 8
+    ; insert adj -> disp
+    ; insert player pos
+    ; OUTPUT
+
+
+;east_anim:
+    ; shift disp_mat left 3
+    ; mask adj 0, 3, 6
+    ; shift right 6
+    ; insert adj -> disp
+    ; OUTPUT
+
+    ; shift disp_mat left 3
+    ; mask adj 1, 4, 7
+    ; shift right 3
+    ; insert adj -> disp
+    ; OUTPUT
+
+    ; shift disp_mat left 3
+    ; mask adj 2, 5, 8
+    ; insert adj -> disp
+    ; insert player pos
+    ; OUTPUT
+
+;west_anim:
+    ; shift disp right 3
+    ; mask adj 2, 5, 8
+    ; shift left 6
+    ; insert adj -> disp
+    ; OUTPUT
+
+    ; shift disp right 3
+    ; mask adj 1, 4, 7
+    ; shift left 3
+    ; insert adj -> disp
+    ; OUTPUT
+
+    ; shift disp right 3
+    ; mask adj 0, 3, 6
+    ; insert adj -> disp
+    ; insert player pos
+    ; OUTPUT
+
+east_anim:
+
+
     bx      lr
 
 OUTPUT_SCREEN:                      ; print cells to screen with player
@@ -437,21 +564,21 @@ OUTPUT_SCREEN:                      ; print cells to screen with player
     ldr     r10, disp_matp     ; we will be extracting from this array
     ldr		r10, [r10]
 
-    cmp     r2, #1              
+    cmp     r2, #0              
     itt     eq                  ; if player is facing east
     lsleq   r9, r9, #18         ; move mask to starting position 2
-    beq     east_loop           ; print 90 degrees rotated
+    beq     north_loop           ; print 90 degrees rotated
 
-    cmp     r2, #2              
+    cmp     r2, #1              
     it     	eq                  ; if player is facing south
-    beq    	south_loop          ; print 180 degrees
+    beq    	east_loop          ; print 180 degrees
 
-    cmp     r2, #3
+    cmp     r2, #2
     itt     eq                  ; if player facing north
     lsleq   r9, r9, #24         ; move mask to starting position 0
-    beq     north_loop          ; print 0 degrees
+    beq     south_loop          ; print 0 degrees
 
-    cmp     r2, #4
+    cmp     r2, #3
     itt     eq                  ; if player facing west
     lsleq   r9, r9, #6          ; move mask to starting position 6
     beq     west_loop           ; print 270 degrees
