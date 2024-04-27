@@ -10,4 +10,5 @@
 #define test_new_int2str 0
 
 #define gotoend 1
-#define debug 1
+#define debug 0
+#define newdm 0

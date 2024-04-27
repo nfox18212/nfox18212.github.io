@@ -10,6 +10,13 @@ newl .macro				; print a newline
 	pop		{r0}
 	.endm
 
+clc .macro
+	push	{r0}
+	mov		r0, #clear	; form feed
+	bl	output_character
+	pop		{r0}
+	.endm
+
 
 	.data
     
@@ -52,6 +59,7 @@ adj_mat:        .word 0x0
     .global		get_color
     .global		set_color
     .global		extract_cid
+    .global 	UPDATE_DISPLAY
 
 redbgp          .word redbg
 greenbgp        .word greenbg
@@ -329,9 +337,12 @@ layer_loop:                         ; takes in color at r0 and prints it 5 times
 
 UPDATE_DISPLAY:                     ; TAKE IN ACTION AND ADJUST MATRIX ACCORDINGLY
     push    {r4-r12, lr}
+    clc
 
     ldr     r4, playerdatap
-    and     r0, r4, #0x00FF         ; mask position
+	ldr		r5, [r4, #0]
+	mov		r6, #0xFFFF
+    and     r0, r6, r5		        ; mask position
     bl      extract_cid             ; returns face (r0), row (r1), col (r2)
     bl      player_pos              ; r1 HOLDS PLAYER POSITION
 
@@ -343,24 +354,17 @@ UPDATE_DISPLAY:                     ; TAKE IN ACTION AND ADJUST MATRIX ACCORDING
 	; "it eq" and the l in "bleq"
 
 
-	ldr		r5, atypep	
+	ldr		r4, atypep
+	ldrb	r5, [r4, #0]
 	cmp		r5, #1					; if last action type was a 1, its just a normal move
-	it		eq
-	bleq	same_face
-	beq		skip
+	beq		same_face
 
 	cmp		r5, #2					; if last action type was a 2, need to animate changing faces
-	it		eq
-	bleq	rotate_anim
-	beq		skip
+	beq		rotate_anim
 	
 	cmp		r5, #3					; if last action type was a 3, we're swapping colors
-	it		eq
-	bleq	place_color
+	beq		place_color
 
-skip:
-	pop		{r4-r12, lr}
-	bx		lr
 
     ; needs conditional: move or place color? 
 place_color:

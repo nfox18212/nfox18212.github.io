@@ -53,8 +53,8 @@ seeddatap:		.word	seeddata
 gametimep:		.word 	gameTime
 createSeedp:	.word 	createSeed
 timesetp:		.word	timeset
-playerdatap:	.word playerdata
-endgamep:		.word endgame
+playerdatap:	.word 	playerdata
+endgamep:		.word 	endgame
 
 UART0_Handler:
 
@@ -199,7 +199,7 @@ Timer_Handler:
 
 	ldr		r7, tickp
 	ldrb	r8, [r7, #0]
-	add		r8, r8, #1		; make the timer tick
+	mov		r8, #1		; make the timer tick
 	strb	r8, [r7, #0]
 
 	; depending on settings inputted on main menu, if the timer passed a certain value, end the game.

@@ -104,7 +104,6 @@ globals:	.word 0x0
 	.global int2string
 	.global long2string
 
-newdm:		.set 	1
 
 read_string:
 	push {r4-r12,lr} 		; store any registers in the range of r4 through r12

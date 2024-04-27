@@ -77,6 +77,7 @@ globals:    .byte 0x0
     .global get_color
     .global get_cell
     .global div_and_mod
+    .global illuminate_LEDs
     .global extract_cid
     .global crash
     .global check_board_state
