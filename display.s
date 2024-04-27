@@ -293,8 +293,9 @@ exit_pos_cond:
 
 find_op_color:                      ; takes in integer at r3, returns pointer to color in r0
     push    {r4-r12, lr}
+
     cmp     r3, #1                  ; RED
-    it      eq
+    it     eq
     ldreq   r0, redbgp              ; move red background string into r0
     beq     exit_ansi_cond
     
@@ -416,8 +417,8 @@ OUTPUT_SCREEN:                      ; print cells to screen with player
     push    {r4-r12, lr}
 
     ldr     r4, playerdatap
-    ldr		r10, [r4]
-    and     r0, r10, #0x00FF        ; mask position
+    ldr		r10, [r4]               ; r10 holds playaer position
+    and     r0, r10, #0x0FFF        ; mask position
     bl      extract_cid             ; returns face (r0), row (r1), col (r2)
     bl      player_pos              ; r1 HOLDS PLAYER POSITION
     and     r2, r10, #0xFF000000    ; mask orientation
@@ -450,12 +451,12 @@ OUTPUT_SCREEN:                      ; print cells to screen with player
     it     	eq                  ; if player is facing south
     beq    	south_loop          ; print 180 degrees
 
-    cmp     r2, #3
+    cmp     r2, #0
     itt     eq                  ; if player facing north
     lsleq   r9, r9, #24         ; move mask to starting position 0
     beq     north_loop          ; print 0 degrees
 
-    cmp     r2, #4
+    cmp     r2, #3
     itt     eq                  ; if player facing west
     lsleq   r9, r9, #6          ; move mask to starting position 6
     beq     west_loop           ; print 270 degrees
