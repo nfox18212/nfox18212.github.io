@@ -44,6 +44,9 @@ adj_mat:        .word 0x0
 
     .global     playerdata
     .global     atype
+    .global     gameTime
+    .global     moves
+    .global     int2string
 
     .text
 
@@ -71,6 +74,8 @@ adj_matp:       .word adj_mat
 atypep:         .word atype
 nlp:            .word new_line
 twoSpacesp:     .word twoSpaces
+gametimep       .word gameTime
+movesp          .word moves
 
 
 
@@ -346,21 +351,16 @@ UPDATE_DISPLAY:                     ; TAKE IN ACTION AND ADJUST MATRIX ACCORDING
 	ldr		r5, atypep	
 	cmp		r5, #1					; if last action type was a 1, its just a normal move
 	it		eq
-	bleq	same_face
-	beq		skip
+	beq	same_face
 
 	cmp		r5, #2					; if last action type was a 2, need to animate changing faces
 	it		eq
-	bleq	rotate_anim
-	beq		skip
+	beq	rotate_anim
 	
 	cmp		r5, #3					; if last action type was a 3, we're swapping colors
 	it		eq
-	bleq	place_color
-
-skip:
-	pop		{r4-r12, lr}
-	bx		lr
+	beq	place_color
+    bne    OUTPUT_SCREEN
 
     ; needs conditional: move or place color? 
 place_color:
@@ -370,17 +370,15 @@ place_color:
     movt    r6, #0xF8FF             ; initial mask 0x1111100011111111 1111111111111111
     bl      get_color               ; r0 HOLDS CELL COLOR
 
-    mov     r7, #3                  ; #3
-    mul     r8, r1, r7              ; r1 * 3
+    mul     r7, r1, #3              ; player_pos * 3
     ror     r6, r6, r7              ; rotate mask right by number of cell (r1 * 3)
-    and     r10, r10, r6              ; clear those bits
+    and     r10, r10, r6            ; clear those bits
 
-    mov     r9, #8                  ; #8
-    sub     r9, r9, r0              ; 8 - r0
-    mul     r9, r9, r7              ; (8 - r0) * 3
-    lsl     r0, r0, r9              ; left shift r0 by (8 - r0) * 3
-    orr     r10, r10, r0              ; insert new color
-    str     r10, [r5]           ; store disp_mat with new color
+    rsb     r9, r1, #8              ; 8 - player_pos (r1)
+    mul     r9, r9, r7              ; (8 - (r1)) * 3
+    lsl     r0, r0, r9              ; left shift r0 by (8 - r1) * 3
+    orr     r10, r10, r0            ; insert new color
+    str     r10, [r5]               ; store disp_mat with new color
     
     bl      OUTPUT_SCREEN
 
@@ -671,14 +669,20 @@ bottom_chrome:
     ; check for anim loop
     ; branch back if needed 
 
-    ldr     r0, timeStrp
+    ldr     r0, timeStrp            ; print time
+    ldr     r0, [r0]
     bl      output_string
-    ; print time val string
-    ldr     r0, twoSpacesp
+    ldr     r0, gametimep
+    ldr     r0, [r0]
+    bl      int2string
     bl      output_string
-    ldr     r0, movesStrp
+    ldr     r0, twoSpacesp          ; print spaces
+    ldr     r0, [r0]
     bl      output_string
-    ; print move val string
+    ldr     r0, movesStrp           ; print moves
+    ldr     r0, [r0]
+    bl      int2string
+    bl      output_string
 
     pop     {r4-r12, lr}
     bx      lr
