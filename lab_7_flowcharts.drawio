@@ -1,14 +1,14 @@
-<mxfile host="app.diagrams.net" modified="2024-04-28T22:06:18.285Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0" etag="jaJ4mFKivJXYEvXJ-qyx" version="24.3.1" type="github">
+<mxfile host="app.diagrams.net" modified="2024-04-28T22:31:52.879Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0" etag="LNbf7ThJsMwqTl2UUkJh" version="24.3.1" type="github">
   <diagram name="Page-1" id="1R23oaMPVLQUFAQNy4ek">
-    <mxGraphModel dx="1192" dy="610" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="986" dy="505" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="OCQK-Y03W5-qOWd1TSCP-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="OCQK-Y03W5-qOWd1TSCP-1" target="OCQK-Y03W5-qOWd1TSCP-2">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="OCQK-Y03W5-qOWd1TSCP-1" value="rcd&lt;br&gt;r0: current orientation&lt;br&gt;&amp;nbsp;r1: relative movement direction " style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="240" y="30" width="120" height="60" as="geometry" />
+        <mxCell id="OCQK-Y03W5-qOWd1TSCP-1" value="&lt;div&gt;rcd&lt;/div&gt;&lt;div&gt;inputs:&lt;br&gt;&lt;/div&gt;r0: current orientation&lt;br&gt;&amp;nbsp;r1: relative movement direction " style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="240" y="10" width="120" height="80" as="geometry" />
         </mxCell>
         <mxCell id="OCQK-Y03W5-qOWd1TSCP-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="OCQK-Y03W5-qOWd1TSCP-2" target="OCQK-Y03W5-qOWd1TSCP-4">
           <mxGeometry relative="1" as="geometry" />
@@ -174,6 +174,33 @@
         </mxCell>
         <mxCell id="OCQK-Y03W5-qOWd1TSCP-45" value="Return r0" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="720" y="525" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="OCQK-Y03W5-qOWd1TSCP-49" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="OCQK-Y03W5-qOWd1TSCP-47" target="OCQK-Y03W5-qOWd1TSCP-48">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="OCQK-Y03W5-qOWd1TSCP-47" value="&lt;div&gt;extract_cid&lt;/div&gt;&lt;div&gt;inputs:&lt;br&gt;r0: cell ID&lt;br&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="650" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="OCQK-Y03W5-qOWd1TSCP-51" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="OCQK-Y03W5-qOWd1TSCP-48" target="OCQK-Y03W5-qOWd1TSCP-50">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="OCQK-Y03W5-qOWd1TSCP-48" value="Call div_and_mod on r0 with 100 in r1" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="740" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="OCQK-Y03W5-qOWd1TSCP-53" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="OCQK-Y03W5-qOWd1TSCP-50" target="OCQK-Y03W5-qOWd1TSCP-52">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="OCQK-Y03W5-qOWd1TSCP-50" value="Call div_and_mod on the remainder of the previous operation with a dividend of 10" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="830" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="OCQK-Y03W5-qOWd1TSCP-55" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="OCQK-Y03W5-qOWd1TSCP-52" target="OCQK-Y03W5-qOWd1TSCP-54">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="OCQK-Y03W5-qOWd1TSCP-52" value="Put the quotient of cid/100 into r0, cid/10 into r1 and the remander into r2" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="920" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="OCQK-Y03W5-qOWd1TSCP-54" value="Return r0, r1, and r2" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1000" width="120" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
