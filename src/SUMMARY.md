@@ -17,8 +17,13 @@
   -  [Layout in Memory](board/layout.md)
   -  [Rotation and Player Orientation](board/rot.md)
   -  [Player Movement](board/movement.md)
-- [Pausing](pause/pause.md)
+  -  [Display](board/display.md)
+- [Interrupts](ints/ints.md)
+    - [Timer Handler](ints/timer.md)
+    - [UART Handler](ints/uart.md)
+    - [GPIO Handler](ints/gpio.md)
 - [Project Layout](layout/layout.md)
 
 # Documentation
 - [mdBook](docs/book.md)
+- [Division Labor](docs/labor.md)
