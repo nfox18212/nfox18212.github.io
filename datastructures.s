@@ -154,46 +154,6 @@ getclcrashp:.word 	getclcrash
 rcdstrp:	.word 	rcdstr
 rcdstrp2:	.word 	rcdstr2
 
-	.if separate_alist_file=0
-set_color:
-	; given cell ID in r0
-	; given color in r1
-	; returns cell in r0
-	push	{r4-r12,lr}
-
-	; backup r1
-	mov		r4, r1
-	; set r1 to 4 to specify to get_cell we want exactly cell r0
-	mov		r1, #4
-	bl		get_cell
-	; now there's the cell contents in r0
-	orr		r0, r0, r4, lsl #12		; this adds the color into the cell contents
-
-	ldr		r7, alistp 		; get the pointer to the alist
-	strh	r0, [r7, r1]	; store the modified cell contents in the alist
-	mov		r11, #0xFFFF
-	movt	r11, #0xFFFF
-	strb	r11, [r7, #0] 	; data is not being stored?
-	; nothing else to do, return
-
-	pop		{r4-r12,lr}
-	mov		pc, lr
-
-get_color:
-	; given cell ID in r0
-	; no other registers are important
-	; return color in r0
-	push	{r4-r12,lr}
-
-	mov		r1, #4
-	bl		get_cell
-	and		r0, r0, #0xF000		; mask for the color
-	lsr		r0, r0, #12			; shift back to 1,2,3,4,5,6
-	; return
-	pop		{r4-r12,lr}
-	mov		pc, lr
-	.endif
-
 new_o:
 	; r0: current cell
 	; r1: direction as character for cardinal direction: 'e', 'n', 's', 'w'

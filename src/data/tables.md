@@ -27,6 +27,20 @@ The Face Orientation Table is a lookup table that stores what the player's new o
   - Encoded for redundancies' sake.
 - New O. represents the new orientation of the player.  When moving from any face A to face B, the player may rotate their frame of view, depending on what faces A and B are.  This is useful for when the board must be rotated.
 
+### fotab subroutines
+**new_o**
+New Orientation takes in a cell as a CID in r0 and the direction of movement the character is going to travel in r1.  It returns the new orientation of the character in r2.  It uses the previously described face orientation table to determine what the new orientation will be.  The given character in r1 **must** be n, s, e, or w or else the program will crash. 
+
+
 ### Utility Subroutines
 **extract_cid**
 Extract Cell ID is a utility subroutine that takes in a cell ID and extracts it, using the inverse of the formula to create a CID - 100*Face Number + 10*Row Number + Column Number.  So extract cid takes the cell ID and divides it by 100 and stores the quotient into r0. Then divide it by 10 and store it in r1.  Finally, it stores the remainder in r2.  Extract cid divides using the div_and_mod library subroutine.
+
+**dirindex**
+Dirindex is a small subroutine that was written because the standard of representing direction as 0123 to nsew, nsew to 0123, wasd to 10, 11, 12, 13.  It also converts 0x10, 0x11, 0x12, 0x13 to wasd.  All it does is convert between the various standards.
+0 -> e, 1 -> s, 2 -> n, 3 -> w.
+0x10 -> a, 0x11 -> s, 0x12 -> w, 0x13 -> d.
+a -> 10, s -> 11, w -> 12, d -> 13.
+e -> 0, s -> 1, n -> 2, w -> 3
+
+The relative direction conversions were not used in the final version.
