@@ -316,7 +316,7 @@ move:
 	mov		r1, r12			; restore r1 being direction
 	; r0 has the new cell and r1 is direction
 	push  	{r0-r2}     ; backup new cell and direction and orientation
- 	; while r0 is the newcell, extract the cid
+    ; while r0 is the newcell, extract the cid
   	bl    	extract_cid
   	mov	   	r10, r0     ; backup new cell's face
   	pop 	{r0-r2}

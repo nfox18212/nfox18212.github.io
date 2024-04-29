@@ -24,3 +24,11 @@ The foTab is a lookup table that tells you what the player's new orientation wil
 
 The rcdTable is a lookup table that converts relative directions to the absolute, cardinal directions.  Relative directions are what the player inputs, up down left right from the w, a, s, and d keys.  Because what cell the player will move to when inputting a direction will change based on orientation, having some form of absolute direction to use as a stable index is vital.  
 
+## Cells
+
+
+The cells table is a list of every cell ID in the adjacency list, in order.  There are no associated subroutines that manipulate it directly, but it is used by the routine to fill the board with random colors.
+
+## Player Data
+
+This is a word stored in memory declared in lab_7.s.  It contains basic information about the state of the player.  The most-significant byte contains the player's orientation; the second most significant byte contains the player's current color; and the last two bytes contain the player's current position as a cell ID.
